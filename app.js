@@ -25,9 +25,12 @@ let db = defaultDb();
 
 // ---------- Supabase helpers ----------
 
+const SB_URL = 'https://trfblvmmrrijwdqtdlyx.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRyZmJsdm1tcnJpandkcXRkbHl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjEwMTcsImV4cCI6MjA5MDYzNzAxN30.6rs2x6bLzzai8q1o0jjgnf12jfxMr0sDor8qa0ek5Sk';
+
 function sbInit() {
-  const url = localStorage.getItem('sb_url');
-  const key = localStorage.getItem('sb_key');
+  const url = localStorage.getItem('sb_url') || SB_URL;
+  const key = localStorage.getItem('sb_key') || SB_KEY;
   if (url && key && window.supabase) {
     _sb = window.supabase.createClient(url, key);
     return true;
