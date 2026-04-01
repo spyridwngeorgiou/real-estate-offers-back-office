@@ -1,5 +1,5 @@
 /* ============================================================
-   Real Estate Offers Tracker  —  localStorage-only SPA
+   Real Estate Offers Tracker  —  localStorage + Supabase SPA
    ============================================================ */
 
 'use strict';
@@ -7,20 +7,75 @@
 // ==================== DATA LAYER ====================
 
 const DB_KEY = 're_offers_db';
+let _sb = null;          // Supabase client
+let _syncTimer = null;   // debounce timer
+let _syncStatus = 'idle'; // 'idle' | 'syncing' | 'ok' | 'error'
 
 function defaultDb() {
   return {
     properties: [],
     offers: [],
     contacts: [],
-    notes: [],          // { id, entityType, entityId, text, createdAt }
-    activities: [],     // { id, type, description, entityType, entityId, createdAt }
+    notes: [],
+    activities: [],
   };
 }
 
-let db = loadDb();
+let db = defaultDb();
 
-function loadDb() {
+// ---------- Supabase helpers ----------
+
+function sbInit() {
+  const url = localStorage.getItem('sb_url');
+  const key = localStorage.getItem('sb_key');
+  if (url && key && window.supabase) {
+    _sb = window.supabase.createClient(url, key);
+    return true;
+  }
+  _sb = null;
+  return false;
+}
+
+async function sbLoad() {
+  if (!_sb) return null;
+  try {
+    const { data, error } = await _sb
+      .from('app_data')
+      .select('value')
+      .eq('key', DB_KEY)
+      .maybeSingle();
+    if (error) { console.warn('Supabase load error:', error.message); return null; }
+    return data ? data.value : null;
+  } catch (e) { console.warn('Supabase unreachable:', e); return null; }
+}
+
+async function sbSave() {
+  if (!_sb) return;
+  setSyncStatus('syncing');
+  try {
+    const { error } = await _sb.from('app_data').upsert({ key: DB_KEY, value: db });
+    setSyncStatus(error ? 'error' : 'ok');
+    if (error) console.warn('Supabase save error:', error.message);
+  } catch (e) { setSyncStatus('error'); }
+}
+
+function scheduleSbSave() {
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(sbSave, 800);
+}
+
+function setSyncStatus(s) {
+  _syncStatus = s;
+  const btn = document.getElementById('cloudBtn');
+  if (!btn) return;
+  const icons = { idle: '☁️', syncing: '🔄', ok: '✅', error: '❌' };
+  const labels = { idle: 'Cloud', syncing: 'Syncing…', ok: 'Synced', error: 'Sync error' };
+  btn.innerHTML = `${icons[s]} ${labels[s]}`;
+}
+
+// ---------- Local storage ----------
+
+function loadLocalDb() {
   try {
     const raw = localStorage.getItem(DB_KEY);
     if (raw) return JSON.parse(raw);
@@ -30,6 +85,63 @@ function loadDb() {
 
 function saveDb() {
   localStorage.setItem(DB_KEY, JSON.stringify(db));
+  scheduleSbSave();
+}
+
+// ---------- Cloud sync settings modal ----------
+
+function openCloudSettings() {
+  const url = localStorage.getItem('sb_url') || '';
+  const key = localStorage.getItem('sb_key') || '';
+  const connected = !!_sb;
+  openModal('☁️ Cloud Sync — Supabase', `
+    <div style="margin-bottom:12px;font-size:.9rem;color:var(--text2)">
+      Connect to a free <strong>Supabase</strong> project so your data lives in the cloud and works on any device.<br><br>
+      <strong>Setup (one time):</strong><br>
+      1. Go to <strong>supabase.com</strong> → create a free project<br>
+      2. In SQL Editor run:<br>
+      <code style="display:block;background:var(--bg);padding:8px;border-radius:4px;margin:6px 0;font-size:.8rem;white-space:pre">create table app_data (key text primary key, value jsonb);
+alter table app_data enable row level security;
+create policy "anon full access" on app_data
+  for all to anon using (true) with check (true);</code>
+      3. Go to <strong>Settings → API</strong> and copy Project URL + anon key below
+    </div>
+    <div class="form-group">
+      <label class="form-label">Supabase Project URL</label>
+      <input class="form-control" id="sbUrl" value="${escHtml(url)}" placeholder="https://xxxx.supabase.co" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Supabase Anon Key</label>
+      <input class="form-control" id="sbKey" value="${escHtml(key)}" placeholder="eyJhbGci..." />
+    </div>
+    ${connected ? '<div style="color:var(--green);margin-top:4px">✅ Currently connected</div>' : '<div style="color:var(--text2);margin-top:4px">Not connected — data stored locally only</div>'}
+  `, [
+    { label: 'Cancel', cls: 'btn-secondary', action: closeModal },
+    ...(connected ? [{ label: 'Disconnect', cls: 'btn-danger', action: () => {
+      localStorage.removeItem('sb_url'); localStorage.removeItem('sb_key');
+      _sb = null; setSyncStatus('idle');
+      closeModal(); toast('Disconnected from Supabase', 'info');
+    }}] : []),
+    { label: connected ? 'Update & Test' : 'Connect & Sync', cls: 'btn-primary', action: saveCloudSettings },
+  ]);
+}
+
+async function saveCloudSettings() {
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  if (!url || !key) { toast('Both URL and key are required', 'error'); return; }
+  localStorage.setItem('sb_url', url);
+  localStorage.setItem('sb_key', key);
+  sbInit();
+  toast('Testing connection…', 'info');
+  closeModal();
+  // push current data to cloud
+  await sbSave();
+  if (_syncStatus === 'ok') {
+    toast('Connected! Data synced to cloud ✅', 'success');
+  } else {
+    toast('Connection failed — check URL and key', 'error');
+  }
 }
 
 function uid() {
@@ -1576,7 +1688,29 @@ function seedDemoData() {
 
 // ==================== INIT ====================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Show loading state
+  document.getElementById('mainContent').innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:center;height:60vh;color:var(--text2);font-size:1rem">Loading…</div>';
+
+  // Try to load from Supabase first, fall back to localStorage
+  sbInit();
+  if (_sb) {
+    setSyncStatus('syncing');
+    const cloudData = await sbLoad();
+    if (cloudData) {
+      db = { ...defaultDb(), ...cloudData };
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      setSyncStatus('ok');
+      toast('Data loaded from cloud ☁️', 'success');
+    } else {
+      db = loadLocalDb();
+      setSyncStatus('idle');
+    }
+  } else {
+    db = loadLocalDb();
+  }
+
   // Seed demo data on first load
   seedDemoData();
 
@@ -1602,6 +1736,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const file = e.target.files[0];
     if (file) { importData(file); e.target.value = ''; }
   });
+
+  // Cloud settings
+  document.getElementById('cloudBtn').addEventListener('click', openCloudSettings);
 
   // Mobile menu toggle
   document.getElementById('menuToggle').addEventListener('click', () => {
