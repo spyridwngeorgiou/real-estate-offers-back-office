@@ -182,7 +182,7 @@ function fmt(v) {
 
 function fmtMoney(v) {
   if (!v && v !== 0) return '—';
-  return '$' + Number(v).toLocaleString('en-US');
+  return '€' + Number(v).toLocaleString('el-GR');
 }
 
 function fmtDate(iso) {
@@ -227,12 +227,15 @@ function propertyStatusBadge(s) {
     listed: 'badge-listed', sold: 'badge-sold', expired: 'badge-expired',
     'off-market': 'badge-offmarket', pending: 'badge-pending',
   }[s] || 'badge-listed';
-  return `<span class="badge ${cls}">${s || 'listed'}</span>`;
+  const label = {
+    listed: 'For Sale', pending: 'Under Offer', sold: 'Sold', expired: 'Expired', 'off-market': 'Off Market',
+  }[s] || s || 'For Sale';
+  return `<span class="badge ${cls}">${label}</span>`;
 }
 
 function contactTypeBadge(t) {
   const cls = {
-    buyer: 'badge-buyer', seller: 'badge-seller', agent: 'badge-agent',
+    buyer: 'badge-buyer', seller: 'badge-seller', agent: 'badge-agent', notary: 'badge-agent',
   }[t] || 'badge-buyer';
   return `<span class="badge ${cls}">${t || 'buyer'}</span>`;
 }
@@ -465,8 +468,8 @@ function renderProperties(el, actions) {
       </div>
       <select class="filter-select" onchange="viewState.propFilter=this.value;renderView()">
         <option value="" ${!filter?'selected':''}>All statuses</option>
-        <option value="listed"     ${filter==='listed'?'selected':''}>Listed</option>
-        <option value="pending"    ${filter==='pending'?'selected':''}>Pending</option>
+        <option value="listed"     ${filter==='listed'?'selected':''}>For Sale</option>
+        <option value="pending"    ${filter==='pending'?'selected':''}>Under Offer</option>
         <option value="sold"       ${filter==='sold'?'selected':''}>Sold</option>
         <option value="expired"    ${filter==='expired'?'selected':''}>Expired</option>
         <option value="off-market" ${filter==='off-market'?'selected':''}>Off Market</option>
@@ -487,19 +490,21 @@ function renderProperties(el, actions) {
 
 function propertyCard(p) {
   const offerCount = db.offers.filter(o => o.propertyId === p.id).length;
-  const typeEmoji = { 'single-family':'&#127968;', condo:'&#127963;', townhouse:'&#127967;', 'multi-family':'&#127960;', land:'&#127757;', commercial:'&#127970;' }[p.type] || '&#127968;';
+  const typeEmoji = { apartment:'🏢', maisonette:'🏘️', villa:'🏡', 'single-family':'🏠', plot:'🌿', commercial:'🏬', office:'🏢', other:'🏠' }[p.type] || '🏠';
+  const pricePerSqm = (p.listPrice && p.sqft) ? `€${Math.round(Number(p.listPrice)/Number(p.sqft)).toLocaleString('el-GR')}/sq.m.` : '';
   return `
     <div class="prop-card" onclick="navigate('property-detail',{id:'${p.id}'})">
       <div class="prop-card-img">${typeEmoji}</div>
       <div class="prop-card-body">
         <div class="prop-card-addr">${escHtml(p.address)}</div>
-        <div class="prop-card-meta">${[p.city, p.state].filter(Boolean).join(', ')} ${p.zip||''}</div>
+        <div class="prop-card-meta">${[p.city, p.state].filter(Boolean).join(' · ')} ${p.zip||''}</div>
         <div class="prop-card-price">${fmtMoney(p.listPrice)}</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           ${propertyStatusBadge(p.status)}
-          ${p.beds ? `<span class="text-muted" style="font-size:.8rem">${p.beds}bd</span>` : ''}
-          ${p.baths ? `<span class="text-muted" style="font-size:.8rem">${p.baths}ba</span>` : ''}
-          ${p.sqft ? `<span class="text-muted" style="font-size:.8rem">${Number(p.sqft).toLocaleString()} sqft</span>` : ''}
+          ${p.beds ? `<span class="text-muted" style="font-size:.8rem">${p.beds} bed</span>` : ''}
+          ${p.baths ? `<span class="text-muted" style="font-size:.8rem">${p.baths} bath</span>` : ''}
+          ${p.sqft ? `<span class="text-muted" style="font-size:.8rem">${Number(p.sqft).toLocaleString('el-GR')} sq.m.</span>` : ''}
+          ${pricePerSqm ? `<span class="text-muted" style="font-size:.8rem">${pricePerSqm}</span>` : ''}
         </div>
       </div>
       <div class="prop-card-footer">
@@ -529,7 +534,7 @@ function renderPropertyDetail(el, actions, id) {
     <div class="detail-header">
       <div>
         <div class="detail-title">${escHtml(p.address)}</div>
-        <div class="detail-sub">${[p.city,p.state,p.zip].filter(Boolean).join(', ')} &bull; ${p.type||'Property'}</div>
+        <div class="detail-sub">${[p.city, p.state].filter(Boolean).join(' · ')} &bull; ${p.type||'Property'}</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         ${propertyStatusBadge(p.status)}
@@ -544,12 +549,17 @@ function renderPropertyDetail(el, actions, id) {
           ${infoItem('Type', p.type||'—')}
           ${infoItem('Bedrooms', p.beds||'—')}
           ${infoItem('Bathrooms', p.baths||'—')}
-          ${infoItem('Sq Ft', p.sqft ? Number(p.sqft).toLocaleString() : '—')}
+          ${infoItem('Size (sq.m.)', p.sqft ? Number(p.sqft).toLocaleString('el-GR') : '—')}
+          ${(p.listPrice && p.sqft) ? infoItem('Price/sq.m.', `€${Math.round(Number(p.listPrice)/Number(p.sqft)).toLocaleString('el-GR')}/sq.m.`) : ''}
           ${infoItem('Year Built', p.yearBuilt||'—')}
-          ${infoItem('Lot Size', p.lotSize||'—')}
-          ${infoItem('HOA / mo', p.hoa ? fmtMoney(p.hoa) : '—')}
+          ${infoItem('Energy Rating', p.energyRating||'—')}
+          ${infoItem('Floor', p.floor||'—')}
+          ${infoItem('Parking', p.parking ? 'Yes' : 'No')}
+          ${infoItem('Storage Room', p.storageRoom ? 'Yes' : 'No')}
+          ${infoItem('Plot Size (sq.m.)', p.lotSize||'—')}
+          ${infoItem('Common Expenses', p.hoa ? fmtMoney(p.hoa) : '—')}
           ${infoItem('Listing Date', fmtDate(p.listingDate))}
-          ${infoItem('MLS #', p.mlsNumber||'—')}
+          ${infoItem('Listing Code', p.mlsNumber||'—')}
           ${infoItem('Added', fmtDate(p.createdAt))}
         </div>
         ${p.description ? `<div class="divider"></div><div style="font-size:.88rem;color:var(--text2);line-height:1.6">${escHtml(p.description)}</div>` : ''}
@@ -696,6 +706,7 @@ function renderOfferDetail(el, actions, id) {
   const prop = db.properties.find(p => p.id === o.propertyId);
   const buyer = db.contacts.find(c => c.id === o.buyerId);
   const agent = db.contacts.find(c => c.id === o.agentId);
+  const notary = db.contacts.find(c => c.id === o.notaryId);
   const notes = db.notes.filter(n => n.entityType === 'offer' && n.entityId === id).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const list = Number(prop?.listPrice) || 0;
@@ -725,14 +736,15 @@ function renderOfferDetail(el, actions, id) {
             ${infoItem('Offer Price', fmtMoney(o.offerPrice))}
             ${infoItem('List Price', fmtMoney(prop?.listPrice))}
             ${infoItem('vs List', diff !== null ? `${diff >= 0 ? '+' : ''}${diff}%` : '—')}
-            ${infoItem('Earnest Money', fmtMoney(o.earnestMoney))}
+            ${infoItem('Deposit', fmtMoney(o.earnestMoney))}
             ${infoItem('Down Payment', o.downPayment ? fmtMoney(o.downPayment) : '—')}
             ${infoItem('Financing', o.financing || '—')}
             ${infoItem('Offer Date', fmtDate(o.offerDate))}
             ${infoItem('Expires', fmtDate(o.expiresAt))}
-            ${infoItem('Closing Date', fmtDate(o.closingDate))}
-            ${infoItem('Inspection', o.inspectionDays ? `${o.inspectionDays} days` : '—')}
-            ${infoItem('Contingencies', o.contingencies || '—')}
+            ${infoItem('Signing Date', fmtDate(o.closingDate))}
+            ${infoItem('Due Diligence', o.inspectionDays ? `${o.inspectionDays} days` : '—')}
+            ${infoItem('Special Terms', o.contingencies || '—')}
+            ${offer ? infoItem('Transfer Tax (3%)', `€${Math.round(offer * 0.03).toLocaleString('el-GR')}`) : ''}
           </div>
         </div>
 
@@ -740,7 +752,8 @@ function renderOfferDetail(el, actions, id) {
           <div class="card-title">Parties</div>
           <div class="info-grid mt16">
             ${infoItem('Buyer', buyer ? `<a href="#" class="text-accent" onclick="navigate('contact-detail',{id:'${buyer.id}'});return false;">${escHtml(buyer.name)}</a>` : '—')}
-            ${infoItem('Buyer Agent', agent ? `<a href="#" class="text-accent" onclick="navigate('contact-detail',{id:'${agent.id}'});return false;">${escHtml(agent.name)}</a>` : '—')}
+            ${infoItem('Agent', agent ? `<a href="#" class="text-accent" onclick="navigate('contact-detail',{id:'${agent.id}'});return false;">${escHtml(agent.name)}</a>` : '—')}
+            ${infoItem('Notary', notary ? `<a href="#" class="text-accent" onclick="navigate('contact-detail',{id:'${notary.id}'});return false;">${escHtml(notary.name)}</a>` : '—')}
             ${infoItem('Property', prop ? `<a href="#" class="text-accent" onclick="navigate('property-detail',{id:'${prop.id}'});return false;">${escHtml(prop.address)}</a>` : '—')}
           </div>
         </div>
@@ -748,8 +761,8 @@ function renderOfferDetail(el, actions, id) {
         <div class="card mt16">
           <div class="card-title">Quick Status Change</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-            ${['pending','countered','accepted','rejected','withdrawn','closed'].map(s =>
-              `<button class="btn btn-sm ${o.status === s ? 'btn-primary' : 'btn-secondary'}" onclick="changeOfferStatus('${id}','${s}')">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`
+            ${[['pending','Pending'],['countered','Counter Offer'],['accepted','Accepted'],['rejected','Rejected'],['withdrawn','Withdrawn'],['closed','Closed / Signed']].map(([s,lbl]) =>
+              `<button class="btn btn-sm ${o.status === s ? 'btn-primary' : 'btn-secondary'}" onclick="changeOfferStatus('${id}','${s}')">${lbl}</button>`
             ).join('')}
           </div>
         </div>
@@ -852,6 +865,7 @@ function renderContacts(el, actions) {
         <option value="buyer"  ${filter==='buyer'?'selected':''}>Buyers</option>
         <option value="seller" ${filter==='seller'?'selected':''}>Sellers</option>
         <option value="agent"  ${filter==='agent'?'selected':''}>Agents</option>
+        <option value="notary" ${filter==='notary'?'selected':''}>Notary</option>
       </select>
     </div>
 
@@ -1178,8 +1192,8 @@ function openPropertyForm(id) {
         <input class="form-control" id="pCity" value="${escHtml(v('city'))}" placeholder="City" />
       </div>
       <div class="form-group">
-        <label class="form-label">State</label>
-        <input class="form-control" id="pState" value="${escHtml(v('state'))}" placeholder="CA" />
+        <label class="form-label">Area / Neighborhood</label>
+        <input class="form-control" id="pState" value="${escHtml(v('state'))}" placeholder="e.g. Glyfada, Kifisia" />
       </div>
       <div class="form-group">
         <label class="form-label">ZIP Code</label>
@@ -1188,17 +1202,24 @@ function openPropertyForm(id) {
       <div class="form-group">
         <label class="form-label">Property Type</label>
         <select class="form-control" id="pType">
-          ${['single-family','condo','townhouse','multi-family','land','commercial'].map(t =>
-            `<option value="${t}" ${v('type')===t?'selected':''}>${t.replace('-',' ').replace(/\b\w/g,c=>c.toUpperCase())}</option>`
-          ).join('')}
+          <option value="apartment"     ${v('type')==='apartment'?'selected':''}>Apartment (Διαμέρισμα)</option>
+          <option value="maisonette"    ${v('type')==='maisonette'?'selected':''}>Maisonette (Μεζονέτα)</option>
+          <option value="villa"         ${v('type')==='villa'?'selected':''}>Villa</option>
+          <option value="single-family" ${v('type')==='single-family'?'selected':''}>Single-Family House</option>
+          <option value="plot"          ${v('type')==='plot'?'selected':''}>Plot (Οικόπεδο)</option>
+          <option value="commercial"    ${v('type')==='commercial'?'selected':''}>Commercial Space</option>
+          <option value="office"        ${v('type')==='office'?'selected':''}>Office</option>
+          <option value="other"         ${v('type')==='other'?'selected':''}>Other</option>
         </select>
       </div>
       <div class="form-group">
         <label class="form-label">Status</label>
         <select class="form-control" id="pStatus">
-          ${['listed','pending','sold','expired','off-market'].map(s =>
-            `<option value="${s}" ${v('status')===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`
-          ).join('')}
+          <option value="listed"     ${v('status')==='listed'?'selected':''}>For Sale</option>
+          <option value="pending"    ${v('status')==='pending'?'selected':''}>Under Offer</option>
+          <option value="sold"       ${v('status')==='sold'?'selected':''}>Sold</option>
+          <option value="expired"    ${v('status')==='expired'?'selected':''}>Expired</option>
+          <option value="off-market" ${v('status')==='off-market'?'selected':''}>Off Market</option>
         </select>
       </div>
       <div class="form-group">
@@ -1214,23 +1235,47 @@ function openPropertyForm(id) {
         <input class="form-control" id="pBaths" type="number" step="0.5" value="${v('baths')}" placeholder="2" />
       </div>
       <div class="form-group">
-        <label class="form-label">Square Feet</label>
-        <input class="form-control" id="pSqft" type="number" value="${v('sqft')}" placeholder="1800" />
+        <label class="form-label">Size (sq.m.)</label>
+        <input class="form-control" id="pSqft" type="number" value="${v('sqft')}" placeholder="e.g. 85" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Floor</label>
+        <select class="form-control" id="pFloor">
+          ${['Ground Floor','1st','2nd','3rd','4th','5th','6th+','Penthouse','Basement'].map(f =>
+            `<option value="${f}" ${v('floor')===f?'selected':''}>${f}</option>`
+          ).join('')}
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">Year Built</label>
-        <input class="form-control" id="pYearBuilt" type="number" value="${v('yearBuilt')}" placeholder="1995" />
+        <input class="form-control" id="pYearBuilt" type="number" value="${v('yearBuilt')}" placeholder="e.g. 1995" />
       </div>
       <div class="form-group">
-        <label class="form-label">Lot Size</label>
-        <input class="form-control" id="pLotSize" value="${escHtml(v('lotSize'))}" placeholder="0.25 acres" />
+        <label class="form-label">Energy Rating</label>
+        <select class="form-control" id="pEnergy">
+          ${['A+','A','B+','B','C','D','E','F','G','N/A'].map(r =>
+            `<option value="${r}" ${v('energyRating')===r?'selected':''}>${r}</option>`
+          ).join('')}
+        </select>
       </div>
       <div class="form-group">
-        <label class="form-label">HOA ($/mo)</label>
+        <label class="form-label">Plot Size (sq.m.)</label>
+        <input class="form-control" id="pLotSize" value="${escHtml(v('lotSize'))}" placeholder="" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Common Expenses (€/mo)</label>
         <input class="form-control" id="pHoa" type="number" value="${v('hoa')}" placeholder="200" />
       </div>
+      <div class="form-group span2" style="display:flex;gap:24px;align-items:center">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="pParking" ${p && p.parking ? 'checked' : ''} /> Parking
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="pStorage" ${p && p.storageRoom ? 'checked' : ''} /> Storage Room
+        </label>
+      </div>
       <div class="form-group">
-        <label class="form-label">MLS Number</label>
+        <label class="form-label">Listing Code</label>
         <input class="form-control" id="pMls" value="${escHtml(v('mlsNumber'))}" placeholder="MLS#12345" />
       </div>
       <div class="form-group">
@@ -1266,6 +1311,10 @@ function savePropertyForm(id) {
     yearBuilt: document.getElementById('pYearBuilt').value,
     lotSize: document.getElementById('pLotSize').value.trim(),
     hoa: document.getElementById('pHoa').value,
+    floor: document.getElementById('pFloor').value,
+    energyRating: document.getElementById('pEnergy').value,
+    parking: document.getElementById('pParking').checked,
+    storageRoom: document.getElementById('pStorage').checked,
     mlsNumber: document.getElementById('pMls').value.trim(),
     listingDate: document.getElementById('pListDate').value,
     description: document.getElementById('pDesc').value.trim(),
@@ -1332,28 +1381,35 @@ function openOfferForm(id, prePropertyId) {
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Buyer's Agent</label>
+        <label class="form-label">Agent</label>
         <select class="form-control" id="oAgent">
           <option value="">-- Select Agent --</option>
           ${db.contacts.filter(c=>c.type==='agent').map(c => `<option value="${c.id}" ${c.id===v('agentId')?'selected':''}>${escHtml(c.name)}</option>`).join('')}
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Offer Price ($) *</label>
+        <label class="form-label">Notary</label>
+        <select class="form-control" id="oNotary">
+          <option value="">-- Select Notary --</option>
+          ${(db.contacts.filter(c=>c.type==='notary').length > 0 ? db.contacts.filter(c=>c.type==='notary') : db.contacts.filter(c=>c.type==='agent')).map(c => `<option value="${c.id}" ${c.id===v('notaryId')?'selected':''}>${escHtml(c.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Offer Price (€) *</label>
         <input class="form-control" id="oPrice" type="number" value="${v('offerPrice')}" placeholder="485000" />
       </div>
       <div class="form-group">
-        <label class="form-label">Earnest Money ($)</label>
+        <label class="form-label">Deposit / Προκαταβολή (€)</label>
         <input class="form-control" id="oEarnest" type="number" value="${v('earnestMoney')}" placeholder="5000" />
       </div>
       <div class="form-group">
-        <label class="form-label">Down Payment ($)</label>
+        <label class="form-label">Down Payment (€)</label>
         <input class="form-control" id="oDown" type="number" value="${v('downPayment')}" placeholder="100000" />
       </div>
       <div class="form-group">
         <label class="form-label">Financing Type</label>
         <select class="form-control" id="oFinancing">
-          ${['','Conventional','FHA','VA','USDA','Cash','Jumbo','Other'].map(f =>
+          ${['','Mortgage (Bank Loan)','Cash','Pre-approved','Jumbo Mortgage','Other'].map(f =>
             `<option value="${f}" ${v('financing')===f?'selected':''}>${f||'-- Select --'}</option>`
           ).join('')}
         </select>
@@ -1375,15 +1431,15 @@ function openOfferForm(id, prePropertyId) {
         <input class="form-control" id="oExpires" type="date" value="${v('expiresAt') ? v('expiresAt').slice(0,10) : ''}" />
       </div>
       <div class="form-group">
-        <label class="form-label">Closing Date</label>
+        <label class="form-label">Signing Date (Υπογραφή)</label>
         <input class="form-control" id="oClosing" type="date" value="${v('closingDate') ? v('closingDate').slice(0,10) : ''}" />
       </div>
       <div class="form-group">
-        <label class="form-label">Inspection Period (days)</label>
+        <label class="form-label">Due Diligence (days)</label>
         <input class="form-control" id="oInspection" type="number" value="${v('inspectionDays')}" placeholder="10" />
       </div>
       <div class="form-group span2">
-        <label class="form-label">Contingencies</label>
+        <label class="form-label">Special Terms</label>
         <input class="form-control" id="oContingencies" value="${escHtml(v('contingencies'))}" placeholder="Financing, Inspection, Appraisal..." />
       </div>
 
@@ -1432,6 +1488,7 @@ function saveOfferForm(id) {
     propertyId: propId,
     buyerId: document.getElementById('oBuyer').value,
     agentId: document.getElementById('oAgent').value,
+    notaryId: document.getElementById('oNotary').value,
     offerPrice: price,
     earnestMoney: document.getElementById('oEarnest').value,
     downPayment: document.getElementById('oDown').value,
@@ -1503,7 +1560,7 @@ function openContactForm(id) {
       <div class="form-group">
         <label class="form-label">Type</label>
         <select class="form-control" id="cType">
-          ${['buyer','seller','agent'].map(t =>
+          ${['buyer','seller','agent','notary'].map(t =>
             `<option value="${t}" ${v('type')===t?'selected':''}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`
           ).join('')}
         </select>
@@ -1521,8 +1578,8 @@ function openContactForm(id) {
         <input class="form-control" id="cPhone" type="tel" value="${escHtml(v('phone'))}" placeholder="(555) 123-4567" />
       </div>
       <div class="form-group">
-        <label class="form-label">License #</label>
-        <input class="form-control" id="cLicense" value="${escHtml(v('license'))}" placeholder="DRE #01234567" />
+        <label class="form-label">License # (ΠΟΜΑ/ΑΜΜ)</label>
+        <input class="form-control" id="cLicense" value="${escHtml(v('license'))}" placeholder="ΠΟΜΑ-12345" />
       </div>
       <div class="form-group">
         <label class="form-label">Address</label>
@@ -1668,40 +1725,40 @@ function seedDemoData() {
   if (db.properties.length > 0) return; // already has data
 
   const contacts = [
-    { id: uid(), name: 'Sarah Johnson', type: 'buyer', email: 'sarah@email.com', phone: '(555) 234-5678', company: '', createdAt: now() },
-    { id: uid(), name: 'Mike Chen', type: 'buyer', email: 'mchen@email.com', phone: '(555) 345-6789', company: '', createdAt: now() },
-    { id: uid(), name: 'Jennifer Williams', type: 'seller', email: 'jwilliams@email.com', phone: '(555) 456-7890', company: '', createdAt: now() },
-    { id: uid(), name: 'Robert Davis', type: 'agent', email: 'rdavis@realty.com', phone: '(555) 567-8901', company: 'Premier Realty', license: 'DRE#01234567', createdAt: now() },
-    { id: uid(), name: 'Lisa Martinez', type: 'agent', email: 'lmartinez@realty.com', phone: '(555) 678-9012', company: 'Apex Properties', license: 'DRE#07654321', createdAt: now() },
+    { id: uid(), name: 'Νίκος Παπαδόπουλος', type: 'buyer', email: 'nikos@email.com', phone: '6944 123456', company: '', createdAt: now() },
+    { id: uid(), name: 'Μαρία Γεωργίου', type: 'buyer', email: 'maria@email.com', phone: '6977 234567', company: '', createdAt: now() },
+    { id: uid(), name: 'Κώστας Αθανασίου', type: 'seller', email: 'kostas@email.com', phone: '6955 345678', company: '', createdAt: now() },
+    { id: uid(), name: 'Ελένη Σταματίου', type: 'agent', email: 'eleni@realty.gr', phone: '6988 456789', company: 'Remax Athens', license: 'ΠΟΜΑ-12345', createdAt: now() },
+    { id: uid(), name: 'Γιώργης Δημητρίου', type: 'agent', email: 'giorgis@realty.gr', phone: '6911 567890', company: 'Century21 Greece', license: 'ΠΟΜΑ-67890', createdAt: now() },
   ];
   db.contacts = contacts;
 
   const p1id = uid(), p2id = uid(), p3id = uid();
   db.properties = [
-    { id: p1id, address: '142 Maple Ave', city: 'Pasadena', state: 'CA', zip: '91103', type: 'single-family', status: 'listed', listPrice: 875000, beds: 4, baths: 2.5, sqft: 2200, yearBuilt: 1987, mlsNumber: 'MLS#112233', listingDate: '2026-03-01', description: 'Beautiful craftsman home in sought-after neighborhood.', createdAt: now() },
-    { id: p2id, address: '55 Ocean View Blvd, Unit 12', city: 'Santa Monica', state: 'CA', zip: '90401', type: 'condo', status: 'pending', listPrice: 625000, beds: 2, baths: 2, sqft: 980, yearBuilt: 2005, hoa: 450, mlsNumber: 'MLS#445566', listingDate: '2026-02-15', createdAt: now() },
-    { id: p3id, address: '8831 Hillcrest Dr', city: 'Beverly Hills', state: 'CA', zip: '90210', type: 'single-family', status: 'listed', listPrice: 2450000, beds: 5, baths: 4, sqft: 4800, yearBuilt: 2001, mlsNumber: 'MLS#778899', listingDate: '2026-03-10', createdAt: now() },
+    { id: p1id, address: 'Βασ. Γεωργίου 14', city: 'Γλυφάδα', state: 'Γλυφάδα', zip: '16675', type: 'apartment', status: 'listed', listPrice: 320000, beds: 3, baths: 2, sqft: 95, yearBuilt: '2005', mlsNumber: 'SP-112233', listingDate: '2026-03-01', energyRating: 'B+', floor: '3rd', parking: true, storageRoom: true, description: 'Φωτεινό διαμέρισμα με θέα θάλασσα, κοντά στο μετρό.', createdAt: now() },
+    { id: p2id, address: 'Λεωφ. Κηφισίας 55', city: 'Μαρούσι', state: 'Μαρούσι', zip: '15125', type: 'maisonette', status: 'listed', listPrice: 480000, beds: 4, baths: 3, sqft: 160, yearBuilt: '1998', mlsNumber: 'SP-445566', listingDate: '2026-02-15', energyRating: 'C', floor: '1st', parking: true, storageRoom: false, description: 'Μεζονέτα με κήπο και χώρο στάθμευσης.', createdAt: now() },
+    { id: p3id, address: 'Ακτή Μιαούλη 8', city: 'Βούλα', state: 'Βούλα', zip: '16673', type: 'villa', status: 'listed', listPrice: 1250000, beds: 5, baths: 4, sqft: 380, yearBuilt: '2010', mlsNumber: 'SP-778899', listingDate: '2026-03-10', energyRating: 'A', parking: true, storageRoom: true, description: 'Πολυτελής βίλα με πισίνα και θέα θάλασσα.', createdAt: now() },
   ];
 
   const o1id = uid(), o2id = uid(), o3id = uid(), o4id = uid();
   db.offers = [
-    { id: o1id, propertyId: p1id, buyerId: contacts[0].id, agentId: contacts[3].id, offerPrice: 855000, earnestMoney: 10000, downPayment: 175000, financing: 'Conventional', status: 'pending', offerDate: '2026-03-20', expiresAt: '2026-03-23', closingDate: '2026-04-30', inspectionDays: 10, contingencies: 'Financing, Inspection, Appraisal', createdAt: new Date('2026-03-20').toISOString() },
-    { id: o2id, propertyId: p1id, buyerId: contacts[1].id, agentId: contacts[4].id, offerPrice: 870000, earnestMoney: 15000, downPayment: 200000, financing: 'Conventional', status: 'countered', counterOffer: true, counterPrice: 880000, counterDate: '2026-03-21', counterExpires: '2026-03-24', counterNotes: 'Seller prefers 45-day close.', offerDate: '2026-03-19', closingDate: '2026-05-05', inspectionDays: 7, contingencies: 'Financing, Inspection', createdAt: new Date('2026-03-19').toISOString() },
-    { id: o3id, propertyId: p2id, buyerId: contacts[0].id, agentId: contacts[3].id, offerPrice: 610000, earnestMoney: 8000, financing: 'FHA', status: 'accepted', offerDate: '2026-03-05', expiresAt: '2026-03-08', closingDate: '2026-04-15', inspectionDays: 10, contingencies: 'Financing, Inspection', createdAt: new Date('2026-03-05').toISOString(), updatedAt: new Date('2026-03-07').toISOString() },
-    { id: o4id, propertyId: p3id, buyerId: contacts[1].id, agentId: contacts[4].id, offerPrice: 2300000, earnestMoney: 50000, financing: 'Jumbo', status: 'pending', offerDate: '2026-03-25', expiresAt: '2026-03-28', closingDate: '2026-05-15', inspectionDays: 14, contingencies: 'Financing, Inspection, Appraisal', createdAt: new Date('2026-03-25').toISOString() },
+    { id: o1id, propertyId: p1id, buyerId: contacts[0].id, agentId: contacts[3].id, offerPrice: 305000, earnestMoney: 10000, downPayment: 80000, financing: 'Mortgage (Bank Loan)', status: 'pending', offerDate: '2026-03-20', expiresAt: '2026-03-25', closingDate: '2026-05-30', inspectionDays: 10, contingencies: 'Τακτοποίηση αυθαιρέτων, καθαρός τίτλος', createdAt: new Date('2026-03-20').toISOString() },
+    { id: o2id, propertyId: p1id, buyerId: contacts[1].id, agentId: contacts[4].id, offerPrice: 315000, earnestMoney: 15000, downPayment: 100000, financing: 'Cash', status: 'countered', counterOffer: true, counterPrice: 318000, counterDate: '2026-03-22', counterExpires: '2026-03-26', counterNotes: 'Πωλητής ζητά ταχύτερο κλείσιμο εντός 60 ημερών.', offerDate: '2026-03-19', closingDate: '2026-05-20', inspectionDays: 7, createdAt: new Date('2026-03-19').toISOString() },
+    { id: o3id, propertyId: p2id, buyerId: contacts[0].id, agentId: contacts[3].id, offerPrice: 460000, earnestMoney: 20000, financing: 'Mortgage (Bank Loan)', status: 'accepted', offerDate: '2026-03-05', expiresAt: '2026-03-10', closingDate: '2026-04-30', inspectionDays: 10, createdAt: new Date('2026-03-05').toISOString(), updatedAt: new Date('2026-03-08').toISOString() },
+    { id: o4id, propertyId: p3id, buyerId: contacts[1].id, agentId: contacts[4].id, offerPrice: 1180000, earnestMoney: 50000, financing: 'Cash', status: 'pending', offerDate: '2026-03-25', expiresAt: '2026-03-30', closingDate: '2026-06-15', inspectionDays: 14, createdAt: new Date('2026-03-25').toISOString() },
   ];
 
   db.notes = [
-    { id: uid(), entityType: 'property', entityId: p1id, text: 'Sellers are motivated — already purchased new home in Arizona.', createdAt: now() },
-    { id: uid(), entityType: 'offer', entityId: o2id, text: 'Buyer is pre-approved for up to $900K. Flexible on close date.', createdAt: now() },
-    { id: uid(), entityType: 'contact', entityId: contacts[0].id, text: 'First-time buyer. Very excited about the Maple Ave property.', createdAt: now() },
+    { id: uid(), entityType: 'property', entityId: p1id, text: 'Κατεπείγουσα πώληση — οι ιδιοκτήτες φεύγουν για εξωτερικό.', createdAt: now() },
+    { id: uid(), entityType: 'offer', entityId: o2id, text: 'Αγοραστής έχει εγκεκριμένο δάνειο έως 350.000€. Ευέλικτος στον χρόνο.', createdAt: now() },
+    { id: uid(), entityType: 'contact', entityId: contacts[0].id, text: 'Πρωτοαγοραστής, πολύ ενδιαφερόμενος για Γλυφάδα.', createdAt: now() },
   ];
 
   db.activities = [
-    { id: uid(), type: 'property_added', description: 'Property added: 142 Maple Ave', entityType: 'property', entityId: p1id, createdAt: new Date('2026-03-01').toISOString() },
-    { id: uid(), type: 'offer_added', description: 'Offer added: $870,000 on 142 Maple Ave', entityType: 'offer', entityId: o2id, createdAt: new Date('2026-03-19').toISOString() },
-    { id: uid(), type: 'offer_added', description: 'Offer added: $855,000 on 142 Maple Ave', entityType: 'offer', entityId: o1id, createdAt: new Date('2026-03-20').toISOString() },
-    { id: uid(), type: 'status_changed', description: 'Offer status changed from pending to accepted', entityType: 'offer', entityId: o3id, createdAt: new Date('2026-03-07').toISOString() },
+    { id: uid(), type: 'property_added', description: 'Ακίνητο προστέθηκε: Βασ. Γεωργίου 14, Γλυφάδα', entityType: 'property', entityId: p1id, createdAt: new Date('2026-03-01').toISOString() },
+    { id: uid(), type: 'offer_added', description: 'Προσφορά: €315.000 για Βασ. Γεωργίου 14', entityType: 'offer', entityId: o2id, createdAt: new Date('2026-03-19').toISOString() },
+    { id: uid(), type: 'offer_added', description: 'Προσφορά: €305.000 για Βασ. Γεωργίου 14', entityType: 'offer', entityId: o1id, createdAt: new Date('2026-03-20').toISOString() },
+    { id: uid(), type: 'status_changed', description: 'Κατάσταση άλλαξε: Αποδεκτή για Λεωφ. Κηφισίας 55', entityType: 'offer', entityId: o3id, createdAt: new Date('2026-03-08').toISOString() },
   ];
 
   saveDb();
