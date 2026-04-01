@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Real Estate Offers Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===================== SIDEBAR NAV ===================== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">&#127968;</span>
+      <span class="logo-text">RE Offers</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-view="dashboard">
+        <span class="nav-icon">&#9783;</span> Dashboard
+      </a>
+      <a href="#" class="nav-item" data-view="properties">
+        <span class="nav-icon">&#127968;</span> Properties
+      </a>
+      <a href="#" class="nav-item" data-view="offers">
+        <span class="nav-icon">&#128203;</span> Offers
+      </a>
+      <a href="#" class="nav-item" data-view="contacts">
+        <span class="nav-icon">&#128100;</span> Contacts
+      </a>
+      <a href="#" class="nav-item" data-view="analytics">
+        <span class="nav-icon">&#128200;</span> Analytics
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-icon" id="exportBtn" title="Export Data">&#128190; Export</button>
+      <label class="btn-icon" id="importLabel" title="Import Data">&#128229; Import
+        <input type="file" id="importFile" accept=".json" style="display:none" />
+      </label>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN CONTENT ===================== -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle">&#9776;</button>
+      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+      <div class="topbar-actions" id="topbarActions"></div>
+    </header>
+
+    <main class="content" id="mainContent">
+      <!-- Views are rendered here by JS -->
+    </main>
+  </div>
+
+  <!-- ===================== MODAL ===================== -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">Dialog</h2>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <!-- ===================== TOAST ===================== -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
