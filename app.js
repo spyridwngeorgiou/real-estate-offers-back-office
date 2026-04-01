@@ -67,6 +67,24 @@ function scheduleSbSave() {
   _syncTimer = setTimeout(sbSave, 800);
 }
 
+function sbSubscribeRealtime() {
+  if (!_sb) return;
+  _sb.channel('app_data_changes')
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'app_data',
+      filter: `key=eq.${DB_KEY}`
+    }, payload => {
+      if (!payload.new || !payload.new.value) return;
+      // Ignore updates we just pushed ourselves (debounce window)
+      if (_syncStatus === 'syncing') return;
+      db = { ...defaultDb(), ...payload.new.value };
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+      renderView();
+      toast('🔄 Updated by a partner', 'info');
+    })
+    .subscribe();
+}
+
 function setSyncStatus(s) {
   _syncStatus = s;
   const btn = document.getElementById('cloudBtn');
@@ -1698,6 +1716,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Try to load from Supabase first, fall back to localStorage
   sbInit();
+  sbSubscribeRealtime();
   if (_sb) {
     setSyncStatus('syncing');
     const cloudData = await sbLoad();
