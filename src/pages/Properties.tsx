@@ -44,22 +44,30 @@ export function Properties() {
   const updateProperty = useUpdateProperty()
 
   async function handleSubmit(values: any) {
-    if (editTarget) {
-      await updateProperty.mutateAsync({ id: editTarget.id, values })
-      addToast('Ακίνητο ενημερώθηκε', 'success')
-    } else {
-      const property = await createProperty.mutateAsync(values)
-      for (const file of pendingPhotos) {
-        try {
-          const { bucket_path } = await uploadFile('property', property.id, file, 'Φωτογραφία')
-          await supabase.from('files').insert({ entity_type: 'property', entity_id: property.id, bucket_path, file_name: file.name, file_size: file.size, mime_type: file.type, label: 'Φωτογραφία' })
-        } catch { /* skip failed uploads */ }
+    try {
+      if (editTarget) {
+        await updateProperty.mutateAsync({ id: editTarget.id, values })
+        addToast('Ακίνητο ενημερώθηκε', 'success')
+      } else {
+        const property = await createProperty.mutateAsync(values)
+        for (const file of pendingPhotos) {
+          try {
+            const { bucket_path } = await uploadFile('property', property.id, file, 'Φωτογραφία')
+            await supabase.from('files').insert({ entity_type: 'property', entity_id: property.id, bucket_path, file_name: file.name, file_size: file.size, mime_type: file.type, label: 'Φωτογραφία' })
+          } catch { /* skip failed uploads */ }
+        }
+        setPendingPhotos([])
+        addToast('Ακίνητο προστέθηκε', 'success')
       }
-      setPendingPhotos([])
-      addToast('Ακίνητο προστέθηκε', 'success')
+      setModalOpen(false)
+      setEditTarget(null)
+    } catch (err: any) {
+      if (err?.code === '23505') {
+        addToast('Υπάρχει ήδη ακίνητο με την ίδια διεύθυνση, πόλη και γειτονιά.', 'error')
+      } else {
+        addToast('Σφάλμα αποθήκευσης. Δοκιμάστε ξανά.', 'error')
+      }
     }
-    setModalOpen(false)
-    setEditTarget(null)
   }
 
   return (

@@ -155,9 +155,20 @@ export function ContactDetail() {
 
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Επεξεργασία Επαφής" size="md">
         <ContactForm initial={contact} onSubmit={async v => {
-          await updateContact.mutateAsync({ id: contact.id, values: v })
-          addToast('Αποθηκεύτηκε', 'success')
-          setEditOpen(false)
+          try {
+            await updateContact.mutateAsync({ id: contact.id, values: v })
+            addToast('Αποθηκεύτηκε', 'success')
+            setEditOpen(false)
+          } catch (err: any) {
+            if (err?.code === '23505') {
+              const msg = err?.message ?? ''
+              if (msg.includes('email')) addToast('Υπάρχει ήδη επαφή με αυτό το email.', 'error')
+              else if (msg.includes('mobile')) addToast('Υπάρχει ήδη επαφή με αυτό το κινητό.', 'error')
+              else addToast('Υπάρχει ήδη επαφή με τα ίδια στοιχεία.', 'error')
+            } else {
+              addToast('Σφάλμα αποθήκευσης.', 'error')
+            }
+          }
         }} onCancel={() => setEditOpen(false)} loading={updateContact.isPending} />
       </Modal>
 

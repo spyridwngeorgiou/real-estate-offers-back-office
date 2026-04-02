@@ -50,16 +50,27 @@ export function Contacts() {
   const createContact = useCreateContact()
 
   async function handleCreate(values: any) {
-    const contact = await createContact.mutateAsync(values)
-    for (const file of pendingPhotos) {
-      try {
-        const { bucket_path } = await uploadFile('contact', contact.id, file, 'Φωτογραφία')
-        await supabase.from('files').insert({ entity_type: 'contact', entity_id: contact.id, bucket_path, file_name: file.name, file_size: file.size, mime_type: file.type, label: 'Φωτογραφία' })
-      } catch { /* skip */ }
+    try {
+      const contact = await createContact.mutateAsync(values)
+      for (const file of pendingPhotos) {
+        try {
+          const { bucket_path } = await uploadFile('contact', contact.id, file, 'Φωτογραφία')
+          await supabase.from('files').insert({ entity_type: 'contact', entity_id: contact.id, bucket_path, file_name: file.name, file_size: file.size, mime_type: file.type, label: 'Φωτογραφία' })
+        } catch { /* skip */ }
+      }
+      setPendingPhotos([])
+      addToast('Επαφή προστέθηκε', 'success')
+      setModalOpen(false)
+    } catch (err: any) {
+      if (err?.code === '23505') {
+        const msg = err?.message ?? ''
+        if (msg.includes('email')) addToast('Υπάρχει ήδη επαφή με αυτό το email.', 'error')
+        else if (msg.includes('mobile')) addToast('Υπάρχει ήδη επαφή με αυτό το κινητό.', 'error')
+        else addToast('Υπάρχει ήδη επαφή με τα ίδια στοιχεία.', 'error')
+      } else {
+        addToast('Σφάλμα αποθήκευσης. Δοκιμάστε ξανά.', 'error')
+      }
     }
-    setPendingPhotos([])
-    addToast('Επαφή προστέθηκε', 'success')
-    setModalOpen(false)
   }
 
   return (

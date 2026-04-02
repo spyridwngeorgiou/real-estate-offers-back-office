@@ -159,9 +159,14 @@ export function PropertyDetail() {
 
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Επεξεργασία Ακινήτου" size="lg">
         <PropertyForm initial={property} onSubmit={async v => {
-          await updateProperty.mutateAsync({ id: property.id, values: v })
-          addToast('Αποθηκεύτηκε', 'success')
-          setEditOpen(false)
+          try {
+            await updateProperty.mutateAsync({ id: property.id, values: v })
+            addToast('Αποθηκεύτηκε', 'success')
+            setEditOpen(false)
+          } catch (err: any) {
+            if (err?.code === '23505') addToast('Υπάρχει ήδη ακίνητο με την ίδια διεύθυνση, πόλη και γειτονιά.', 'error')
+            else addToast('Σφάλμα αποθήκευσης.', 'error')
+          }
         }} onCancel={() => setEditOpen(false)} loading={updateProperty.isPending} />
       </Modal>
 
