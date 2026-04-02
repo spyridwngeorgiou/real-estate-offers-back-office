@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Users, Mail, Phone } from 'lucide-react'
+import { Plus, Search, Users, Mail, Phone, ArrowUp, ArrowDown } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -32,8 +32,21 @@ export function Contacts() {
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [pendingPhotos, setPendingPhotos] = useState<File[]>([])
+  const [sortCol, setSortCol] = useState('full_name')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  function toggleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
 
-  const { data: contacts = [], isLoading } = useContacts({ type: typeFilter || undefined, search })
+  const { data: rawContacts = [], isLoading } = useContacts({ type: typeFilter || undefined, search })
+  const contacts = [...rawContacts].sort((a, b) => {
+    const av = (a as any)[sortCol] ?? ''
+    const bv = (b as any)[sortCol] ?? ''
+    if (av < bv) return sortDir === 'asc' ? -1 : 1
+    if (av > bv) return sortDir === 'asc' ? 1 : -1
+    return 0
+  })
   const createContact = useCreateContact()
 
   async function handleCreate(values: any) {
@@ -81,11 +94,22 @@ export function Contacts() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50">
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Όνομα</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Τύπος</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Εταιρεία</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Email</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Τηλέφωνο</th>
+                      {[
+                        { col: 'full_name', label: 'Όνομα' },
+                        { col: 'contact_type', label: 'Τύπος' },
+                        { col: 'company', label: 'Εταιρεία' },
+                        { col: 'email', label: 'Email' },
+                        { col: null, label: 'Τηλέφωνο' },
+                      ].map(({ col, label }) => (
+                        <th key={label}
+                          className={`px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase ${col ? 'cursor-pointer hover:text-slate-800 select-none' : ''}`}
+                          onClick={() => col && toggleSort(col)}>
+                          <span className="inline-flex items-center gap-1">
+                            {label}
+                            {col && sortCol === col && (sortDir === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />)}
+                          </span>
+                        </th>
+                      ))}
                       <th className="px-5 py-3"></th>
                     </tr>
                   </thead>

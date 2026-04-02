@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, FileText, GitCompare } from 'lucide-react'
+import { Plus, Search, FileText, GitCompare, ArrowUp, ArrowDown } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -39,11 +39,18 @@ export function Offers() {
   const [pendingPhotos, setPendingPhotos] = useState<File[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [compareOpen, setCompareOpen] = useState(false)
+  const [sortCol, setSortCol] = useState<string>('offer_date')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  function toggleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
 
   const { data: offers = [], isLoading } = useOffers({ status: statusFilter || undefined })
   const createOffer = useCreateOffer()
 
-  const filtered = offers.filter((o: any) => {
+  const filtered = [...offers].filter((o: any) => {
     if (categoryFilter && o.category !== categoryFilter) return false
     if (search) {
       const q = search.toLowerCase()
@@ -54,6 +61,17 @@ export function Offers() {
       )
     }
     return true
+  }).sort((a: any, b: any) => {
+    let av: any, bv: any
+    if (sortCol === 'offer_price') { av = a.offer_price; bv = b.offer_price }
+    else if (sortCol === 'offer_date') { av = a.offer_date; bv = b.offer_date }
+    else if (sortCol === 'expires_at') { av = a.expires_at ?? ''; bv = b.expires_at ?? '' }
+    else if (sortCol === 'property') { av = a.property?.address ?? ''; bv = b.property?.address ?? '' }
+    else if (sortCol === 'person') { av = (a.buyer?.full_name ?? a.contractor?.full_name ?? ''); bv = (b.buyer?.full_name ?? b.contractor?.full_name ?? '') }
+    else { av = a[sortCol] ?? ''; bv = b[sortCol] ?? '' }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1
+    if (av > bv) return sortDir === 'asc' ? 1 : -1
+    return 0
   })
 
   async function handleCreate(values: any) {
@@ -118,14 +136,24 @@ export function Offers() {
                             checked={selectedIds.size === filtered.length && filtered.length > 0}
                             onChange={e => setSelectedIds(e.target.checked ? new Set(filtered.map((o: any) => o.id)) : new Set())} />
                         </th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ακίνητο</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Κατηγορία</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Αγοραστής / Ανάδοχος</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Τιμή</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">vs Ζητούμενη</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Κατάσταση</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ημερομηνία</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Λήξη</th>
+                        {[
+                          { col: 'property', label: 'Ακίνητο' },
+                          { col: 'person', label: 'Επαφή' },
+                          { col: 'offer_price', label: 'Τιμή' },
+                          { col: null, label: 'vs Ζητούμενη' },
+                          { col: 'status', label: 'Κατάσταση' },
+                          { col: 'offer_date', label: 'Ημερομηνία' },
+                          { col: 'expires_at', label: 'Λήξη' },
+                        ].map(({ col, label }) => (
+                          <th key={label}
+                            className={`px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap ${col ? 'cursor-pointer hover:text-slate-800 select-none' : ''}`}
+                            onClick={() => col && toggleSort(col)}>
+                            <span className="inline-flex items-center gap-1">
+                              {label}
+                              {col && sortCol === col && (sortDir === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />)}
+                            </span>
+                          </th>
+                        ))}
                         <th className="px-5 py-3"></th>
                       </tr>
                     </thead>
