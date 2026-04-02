@@ -1,0 +1,283 @@
+import { useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Edit, Trash2, Plus } from 'lucide-react'
+import { Topbar } from '../components/layout/Topbar'
+import { Button } from '../components/ui/Button'
+import { Badge } from '../components/ui/Badge'
+import { Modal } from '../components/ui/Modal'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { OfferForm } from '../components/offers/OfferForm'
+import { FileUpload } from '../components/ui/FileUpload'
+import { NotesList } from '../components/shared/NotesList'
+import { useOffer, useUpdateOffer, useDeleteOffer, useCreateCounterOffer } from '../hooks/useOffers'
+import { useUIStore } from '../store/uiStore'
+import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, FINANCING_OPTIONS, transferTax } from '../lib/utils'
+
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex justify-between py-2 border-b border-slate-100 last:border-0">
+      <span className="text-sm text-slate-500">{label}</span>
+      <span className="text-sm font-medium text-slate-900 text-right">{value ?? '—'}</span>
+    </div>
+  )
+}
+
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  pending:   ['accepted', 'rejected', 'withdrawn', 'countered'],
+  countered: ['accepted', 'rejected', 'withdrawn'],
+  accepted:  ['signed', 'withdrawn'],
+  signed:    [],
+  rejected:  ['pending'],
+  withdrawn: ['pending'],
+}
+
+const STATUS_LABELS_BTN: Record<string, string> = {
+  accepted:  'Αποδοχή',
+  rejected:  'Απόρριψη',
+  withdrawn: 'Ανάκληση',
+  countered: 'Αντιπροσφορά',
+  signed:    'Υπογραφή',
+  pending:   'Επαναφορά σε Εκκρεμές',
+}
+
+export function OfferDetail() {
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const addToast = useUIStore(s => s.addToast)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [counterOpen, setCounterOpen] = useState(false)
+  const [counterPrice, setCounterPrice] = useState('')
+  const [counterNotes, setCounterNotes] = useState('')
+  const [counterParty, setCounterParty] = useState('seller')
+
+  const { data: offer, isLoading } = useOffer(id)
+  const updateOffer = useUpdateOffer()
+  const deleteOffer = useDeleteOffer()
+  const createCounter = useCreateCounterOffer()
+
+  if (isLoading) return <div className="p-8 text-slate-400">Φόρτωση…</div>
+  if (!offer) return <div className="p-8 text-slate-400">Δεν βρέθηκε η προσφορά.</div>
+
+  const financing = FINANCING_OPTIONS.find(f => f.value === offer.financing)?.label ?? offer.financing
+  const counterOffers = [...(offer.counter_offers ?? [])].sort((a: any, b: any) => a.round - b.round)
+  const nextRound = counterOffers.length + 1
+  const tax = transferTax(offer.offer_price)
+  const availableTransitions = STATUS_TRANSITIONS[offer.status] ?? []
+
+  async function handleStatusChange(status: string) {
+    await updateOffer.mutateAsync({ id: offer.id, values: { status: status as any } })
+    addToast(`Κατάσταση: ${OFFER_STATUS_LABELS[status]}`, 'success')
+  }
+
+  async function handleDelete() {
+    await deleteOffer.mutateAsync(offer.id)
+    addToast('Προσφορά διαγράφηκε', 'info')
+    navigate('/offers')
+  }
+
+  async function handleCounterSubmit() {
+    if (!counterPrice) return
+    await createCounter.mutateAsync({
+      offer_id: offer.id,
+      round: nextRound,
+      counter_price: Number(counterPrice),
+      counter_date: new Date().toISOString().slice(0, 10),
+      expires_at: null,
+      notes: counterNotes || null,
+      from_party: counterParty,
+    })
+    addToast('Αντιπροσφορά καταχωρήθηκε', 'success')
+    setCounterOpen(false)
+    setCounterPrice('')
+    setCounterNotes('')
+  }
+
+  return (
+    <div>
+      <Topbar title={`Προσφορά ${fmtMoney(offer.offer_price)}`} actions={
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="secondary" size="sm" onClick={() => navigate('/offers')}><ArrowLeft size={15} /></Button>
+          <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}><Edit size={15} /> Επεξεργασία</Button>
+          <Button variant="danger" size="sm" onClick={() => setDeleteOpen(true)}><Trash2 size={15} /></Button>
+        </div>
+      } />
+
+      <div className="p-4 lg:p-6 space-y-6">
+        {/* Header card */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <h2 className="text-2xl font-bold text-slate-900">{fmtMoney(offer.offer_price)}</h2>
+                <Badge label={OFFER_STATUS_LABELS[offer.status] ?? offer.status} variant={offer.status} />
+              </div>
+              <p className="text-slate-500">{offer.property?.address}{offer.property?.city ? `, ${offer.property.city}` : ''}</p>
+              {offer.property?.list_price && (
+                <p className="text-xs text-slate-400 mt-1">
+                  Ζητούμενη: {fmtMoney(offer.property.list_price)} —
+                  Διαφορά: {((offer.offer_price - offer.property.list_price) / offer.property.list_price * 100).toFixed(1)}%
+                </p>
+              )}
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-slate-400">Εκτιμώμενος Φόρος Μεταβίβασης (3%)</p>
+              <p className="text-xl font-bold text-orange-600">{fmtMoney(tax)}</p>
+            </div>
+          </div>
+
+          {/* Quick status change */}
+          {availableTransitions.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
+              <span className="text-xs text-slate-500 self-center mr-1">Γρήγορη αλλαγή:</span>
+              {availableTransitions.map(s => (
+                <Button key={s} size="sm"
+                  variant={s === 'accepted' || s === 'signed' ? 'primary' : s === 'rejected' || s === 'withdrawn' ? 'danger' : 'secondary'}
+                  onClick={() => s === 'countered' ? setCounterOpen(true) : handleStatusChange(s)}>
+                  {STATUS_LABELS_BTN[s]}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Details */}
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <h3 className="font-semibold text-slate-900 mb-3">Οικονομικά Στοιχεία</h3>
+              <InfoRow label="Τιμή Προσφοράς" value={fmtMoney(offer.offer_price)} />
+              <InfoRow label="Αρραβώνας" value={fmtMoney(offer.earnest_money)} />
+              <InfoRow label="Ίδια Κεφάλαια" value={fmtMoney(offer.down_payment)} />
+              <InfoRow label="Χρηματοδότηση" value={financing} />
+              <InfoRow label="Due Diligence" value={offer.due_diligence_days ? `${offer.due_diligence_days} ημέρες` : null} />
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <h3 className="font-semibold text-slate-900 mb-3">Ημερομηνίες</h3>
+              <InfoRow label="Ημ. Προσφοράς" value={fmtDate(offer.offer_date)} />
+              <InfoRow label="Λήξη" value={fmtDate(offer.expires_at)} />
+              <InfoRow label="Ημ. Υπογραφής" value={fmtDate(offer.signing_date)} />
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <h3 className="font-semibold text-slate-900 mb-3">Εμπλεκόμενα Μέρη</h3>
+              <InfoRow label="Αγοραστής" value={offer.buyer?.full_name} />
+              {offer.buyer?.phone && <InfoRow label="Τηλ. Αγοραστή" value={offer.buyer.phone} />}
+              {offer.buyer?.email && <InfoRow label="Email Αγοραστή" value={offer.buyer.email} />}
+              <InfoRow label="Μεσίτης Αγοραστή" value={offer.buyer_agent?.full_name} />
+              <InfoRow label="Μεσίτης Πωλητή" value={offer.seller_agent?.full_name} />
+              <InfoRow label="Συμβολαιογράφος" value={offer.notary?.full_name} />
+            </div>
+
+            {(offer.special_terms || offer.internal_notes) && (
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                {offer.special_terms && (
+                  <div className="mb-3">
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase mb-1">Ειδικοί Όροι</h4>
+                    <p className="text-sm text-slate-700">{offer.special_terms}</p>
+                  </div>
+                )}
+                {offer.internal_notes && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase mb-1">Εσωτερικές Σημειώσεις</h4>
+                    <p className="text-sm text-slate-700">{offer.internal_notes}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right column */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Counter offers */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                <h3 className="font-semibold text-slate-900">Ιστορικό Αντιπροσφορών ({counterOffers.length})</h3>
+                <Button variant="secondary" size="sm" onClick={() => setCounterOpen(true)}>
+                  <Plus size={14} /> Νέα Αντιπροσφορά
+                </Button>
+              </div>
+              {counterOffers.length === 0
+                ? <p className="text-sm text-slate-400 p-5">Δεν υπάρχουν αντιπροσφορές.</p>
+                : <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead><tr className="border-b border-slate-100 bg-slate-50">
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Γύρος</th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Τιμή</th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Από</th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ημερομηνία</th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Σημειώσεις</th>
+                      </tr></thead>
+                      <tbody>
+                        {counterOffers.map((c: any) => (
+                          <tr key={c.id} className="border-b border-slate-50">
+                            <td className="px-5 py-3 font-medium text-slate-500">#{c.round}</td>
+                            <td className="px-5 py-3 font-bold text-slate-900">{fmtMoney(c.counter_price)}</td>
+                            <td className="px-5 py-3 text-slate-600">{c.from_party === 'seller' ? 'Πωλητής' : c.from_party === 'buyer' ? 'Αγοραστής' : c.from_party ?? '—'}</td>
+                            <td className="px-5 py-3 text-slate-400">{fmtDate(c.counter_date)}</td>
+                            <td className="px-5 py-3 text-slate-500 text-xs">{c.notes ?? '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+              }
+            </div>
+
+            {id && <NotesList entityType="offer" entityId={id} />}
+
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <h3 className="font-semibold text-slate-900 mb-4">Αρχεία & Έγγραφα</h3>
+              {id && <FileUpload entityType="offer" entityId={id} />}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Edit modal */}
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Επεξεργασία Προσφοράς" size="lg">
+        <OfferForm initial={offer} onSubmit={async v => {
+          await updateOffer.mutateAsync({ id: offer.id, values: v })
+          addToast('Αποθηκεύτηκε', 'success')
+          setEditOpen(false)
+        }} onCancel={() => setEditOpen(false)} loading={updateOffer.isPending} />
+      </Modal>
+
+      <ConfirmDialog open={deleteOpen} title="Διαγραφή Προσφοράς"
+        message="Η διαγραφή είναι μόνιμη. Συνέχεια;"
+        onConfirm={handleDelete} onCancel={() => setDeleteOpen(false)} />
+
+      {/* Counter offer modal */}
+      <Modal open={counterOpen} onClose={() => setCounterOpen(false)} title={`Αντιπροσφορά — Γύρος ${nextRound}`} size="sm">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Τιμή Αντιπροσφοράς (€) *</label>
+            <input type="number" value={counterPrice} onChange={e => setCounterPrice(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="290000" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Από</label>
+            <select value={counterParty} onChange={e => setCounterParty(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="seller">Πωλητής</option>
+              <option value="buyer">Αγοραστής</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Σημειώσεις</label>
+            <textarea value={counterNotes} onChange={e => setCounterNotes(e.target.value)} rows={3}
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setCounterOpen(false)}>Ακύρωση</Button>
+            <Button variant="primary" disabled={!counterPrice || createCounter.isPending} onClick={handleCounterSubmit}>
+              {createCounter.isPending ? 'Αποθήκευση…' : 'Αποθήκευση'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  )
+}

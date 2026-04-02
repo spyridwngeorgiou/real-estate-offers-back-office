@@ -1,0 +1,111 @@
+export type PropertyType = 'apartment' | 'maisonette' | 'villa' | 'single_family' | 'plot' | 'commercial' | 'office' | 'other'
+export type PropertyStatus = 'listed' | 'under_offer' | 'sold' | 'expired' | 'off_market'
+export type OfferStatus = 'pending' | 'countered' | 'accepted' | 'rejected' | 'withdrawn' | 'signed'
+export type ContactType = 'buyer' | 'seller' | 'agent' | 'notary' | 'lawyer' | 'other'
+export type FinancingType = 'cash' | 'mortgage' | 'pre_approved' | 'other'
+
+export interface Property {
+  id: string
+  address: string
+  city: string | null
+  neighborhood: string | null
+  postal_code: string | null
+  property_type: PropertyType
+  status: PropertyStatus
+  list_price: number | null
+  sqm: number | null
+  plot_sqm: number | null
+  bedrooms: number | null
+  bathrooms: number | null
+  floor: string | null
+  year_built: number | null
+  energy_rating: string | null
+  has_parking: boolean
+  has_storage: boolean
+  common_expenses: number | null
+  listing_code: string | null
+  listing_date: string | null
+  description: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Contact {
+  id: string
+  full_name: string
+  contact_type: ContactType
+  company: string | null
+  email: string | null
+  phone: string | null
+  mobile: string | null
+  license_no: string | null
+  address: string | null
+  tax_id: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Offer {
+  id: string
+  property_id: string
+  buyer_id: string | null
+  seller_agent_id: string | null
+  buyer_agent_id: string | null
+  notary_id: string | null
+  offer_price: number
+  earnest_money: number | null
+  down_payment: number | null
+  financing: string | null
+  status: OfferStatus
+  offer_date: string
+  expires_at: string | null
+  signing_date: string | null
+  due_diligence_days: number | null
+  special_terms: string | null
+  internal_notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CounterOffer {
+  id: string
+  offer_id: string
+  round: number
+  counter_price: number
+  counter_date: string | null
+  expires_at: string | null
+  notes: string | null
+  from_party: string | null
+  created_at: string
+}
+
+export interface Note {
+  id: string
+  entity_type: string
+  entity_id: string
+  text: string
+  created_at: string
+  updated_at: string
+}
+
+export interface FileAttachment {
+  id: string
+  entity_type: string
+  entity_id: string
+  bucket_path: string
+  file_name: string
+  file_size: number | null
+  mime_type: string | null
+  label: string | null
+  created_at: string
+}
+
+export interface Activity {
+  id: string
+  event_type: string
+  description: string
+  entity_type: string | null
+  entity_id: string | null
+  created_at: string
+}
