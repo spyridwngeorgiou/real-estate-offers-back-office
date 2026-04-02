@@ -10,6 +10,8 @@ import { OfferForm } from '../components/offers/OfferForm'
 import { useOffers, useCreateOffer } from '../hooks/useOffers'
 import { fmtMoney, fmtDate, OFFER_STATUS_LABELS } from '../lib/utils'
 import { useUIStore } from '../store/uiStore'
+import { uploadFile } from '../lib/storage'
+import { supabase } from '../lib/supabase'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Όλες' },
@@ -27,6 +29,7 @@ export function Offers() {
   const [statusFilter, setStatusFilter] = useState('')
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [pendingPhotos, setPendingPhotos] = useState<File[]>([])
 
   const { data: offers = [], isLoading } = useOffers({ status: statusFilter || undefined })
   const createOffer = useCreateOffer()
@@ -39,7 +42,14 @@ export function Offers() {
     : offers
 
   async function handleCreate(values: any) {
-    await createOffer.mutateAsync(values)
+    const offer = await createOffer.mutateAsync(values)
+    for (const file of pendingPhotos) {
+      try {
+        const { bucket_path } = await uploadFile('offer', offer.id, file, 'Φωτογραφία')
+        await supabase.from('files').insert({ entity_type: 'offer', entity_id: offer.id, bucket_path, file_name: file.name, file_size: file.size, mime_type: file.type, label: 'Φωτογραφία' })
+      } catch { /* skip */ }
+    }
+    setPendingPhotos([])
     addToast('Προσφορά καταχωρήθηκε', 'success')
     setModalOpen(false)
   }
@@ -129,7 +139,7 @@ export function Offers() {
       </div>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Νέα Προσφορά" size="lg">
-        <OfferForm onSubmit={handleCreate} onCancel={() => setModalOpen(false)} loading={createOffer.isPending} />
+        <OfferForm onSubmit={handleCreate} onCancel={() => setModalOpen(false)} loading={createOffer.isPending} onPhotosChange={setPendingPhotos} />
       </Modal>
     </div>
   )

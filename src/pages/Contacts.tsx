@@ -10,6 +10,8 @@ import { ContactForm } from '../components/contacts/ContactForm'
 import { useContacts, useCreateContact } from '../hooks/useContacts'
 import { CONTACT_TYPE_LABELS } from '../lib/utils'
 import { useUIStore } from '../store/uiStore'
+import { uploadFile } from '../lib/storage'
+import { supabase } from '../lib/supabase'
 
 const TYPE_OPTIONS = [
   { value: '', label: 'Όλοι οι τύποι' },
@@ -27,12 +29,20 @@ export function Contacts() {
   const [typeFilter, setTypeFilter] = useState('')
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [pendingPhotos, setPendingPhotos] = useState<File[]>([])
 
   const { data: contacts = [], isLoading } = useContacts({ type: typeFilter || undefined, search })
   const createContact = useCreateContact()
 
   async function handleCreate(values: any) {
-    await createContact.mutateAsync(values)
+    const contact = await createContact.mutateAsync(values)
+    for (const file of pendingPhotos) {
+      try {
+        const { bucket_path } = await uploadFile('contact', contact.id, file, 'Φωτογραφία')
+        await supabase.from('files').insert({ entity_type: 'contact', entity_id: contact.id, bucket_path, file_name: file.name, file_size: file.size, mime_type: file.type, label: 'Φωτογραφία' })
+      } catch { /* skip */ }
+    }
+    setPendingPhotos([])
     addToast('Επαφή προστέθηκε', 'success')
     setModalOpen(false)
   }
@@ -117,7 +127,7 @@ export function Contacts() {
       </div>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Νέα Επαφή" size="md">
-        <ContactForm onSubmit={handleCreate} onCancel={() => setModalOpen(false)} loading={createContact.isPending} />
+        <ContactForm onSubmit={handleCreate} onCancel={() => setModalOpen(false)} loading={createContact.isPending} onPhotosChange={setPendingPhotos} />
       </Modal>
     </div>
   )

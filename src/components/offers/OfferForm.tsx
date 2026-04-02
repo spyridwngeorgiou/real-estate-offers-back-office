@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { FormField, inputClass, selectClass } from '../ui/FormField'
 import { Button } from '../ui/Button'
+import { InlinePhotoPicker } from '../ui/InlinePhotoPicker'
 import { useProperties } from '../../hooks/useProperties'
 import { useContacts } from '../../hooks/useContacts'
 import { FINANCING_OPTIONS } from '../../lib/utils'
@@ -12,9 +13,10 @@ interface OfferFormProps {
   onSubmit: (values: any) => Promise<void>
   onCancel: () => void
   loading?: boolean
+  onPhotosChange?: (files: File[]) => void
 }
 
-export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading }: OfferFormProps) {
+export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading, onPhotosChange }: OfferFormProps) {
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
       ...initial,
@@ -111,6 +113,10 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading 
       </FormField>
       <FormField label="Εσωτερικές Σημειώσεις" hint="Ορατό μόνο στην ομάδα">
         <textarea {...register('internal_notes')} className={inputClass} rows={2} placeholder="…" />
+      </FormField>
+
+      <FormField label="Συνημμένα / Φωτογραφίες">
+        <InlinePhotoPicker onChange={onPhotosChange ?? (() => {})} />
       </FormField>
 
       <div className="flex justify-end gap-3 pt-2">

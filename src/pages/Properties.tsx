@@ -11,6 +11,8 @@ import { useProperties, useCreateProperty, useUpdateProperty } from '../hooks/us
 import { useOffers } from '../hooks/useOffers'
 import { fmtMoney, pricePerSqm, PROPERTY_TYPE_LABELS, PROPERTY_STATUS_LABELS } from '../lib/utils'
 import { useUIStore } from '../store/uiStore'
+import { uploadFile } from '../lib/storage'
+import { supabase } from '../lib/supabase'
 import type { Property } from '../types'
 
 const TYPE_EMOJI: Record<string, string> = {
@@ -34,6 +36,7 @@ export function Properties() {
   const [statusFilter, setStatusFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Property | null>(null)
+  const [pendingPhotos, setPendingPhotos] = useState<File[]>([])
 
   const { data: properties = [], isLoading } = useProperties({ search, status: statusFilter || undefined })
   const { data: allOffers = [] } = useOffers()
@@ -45,7 +48,14 @@ export function Properties() {
       await updateProperty.mutateAsync({ id: editTarget.id, values })
       addToast('Ακίνητο ενημερώθηκε', 'success')
     } else {
-      await createProperty.mutateAsync(values)
+      const property = await createProperty.mutateAsync(values)
+      for (const file of pendingPhotos) {
+        try {
+          const { bucket_path } = await uploadFile('property', property.id, file, 'Φωτογραφία')
+          await supabase.from('files').insert({ entity_type: 'property', entity_id: property.id, bucket_path, file_name: file.name, file_size: file.size, mime_type: file.type, label: 'Φωτογραφία' })
+        } catch { /* skip failed uploads */ }
+      }
+      setPendingPhotos([])
       addToast('Ακίνητο προστέθηκε', 'success')
     }
     setModalOpen(false)
@@ -122,6 +132,7 @@ export function Properties() {
           onSubmit={handleSubmit}
           onCancel={() => { setModalOpen(false); setEditTarget(null) }}
           loading={createProperty.isPending || updateProperty.isPending}
+          onPhotosChange={setPendingPhotos}
         />
       </Modal>
     </div>

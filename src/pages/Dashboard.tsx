@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Building2, Plus } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
@@ -11,6 +12,13 @@ import { fmtMoney, fmtDate, timeAgo, OFFER_STATUS_LABELS } from '../lib/utils'
 
 export function Dashboard() {
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!localStorage.getItem('re_onboarded')) {
+      navigate('/guide')
+    }
+  }, [])
+
   const { data: properties = [] } = useProperties()
   const { data: offers = [] } = useOffers()
   const { data: activities = [] } = useActivities(10)

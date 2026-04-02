@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { FormField, inputClass, selectClass } from '../ui/FormField'
 import { Button } from '../ui/Button'
+import { InlinePhotoPicker } from '../ui/InlinePhotoPicker'
 import type { Contact } from '../../types'
 
 interface ContactFormProps {
@@ -8,9 +9,10 @@ interface ContactFormProps {
   onSubmit: (values: any) => Promise<void>
   onCancel: () => void
   loading?: boolean
+  onPhotosChange?: (files: File[]) => void
 }
 
-export function ContactForm({ initial, onSubmit, onCancel, loading }: ContactFormProps) {
+export function ContactForm({ initial, onSubmit, onCancel, loading, onPhotosChange }: ContactFormProps) {
   const { register, handleSubmit, formState: { errors } } = useForm({ defaultValues: initial ?? {} })
 
   return (
@@ -62,6 +64,10 @@ export function ContactForm({ initial, onSubmit, onCancel, loading }: ContactFor
           </FormField>
         </div>
       </div>
+
+      <FormField label="Φωτογραφίες">
+        <InlinePhotoPicker onChange={onPhotosChange ?? (() => {})} />
+      </FormField>
 
       <div className="flex justify-end gap-3 pt-2">
         <Button variant="secondary" onClick={onCancel} type="button">Ακύρωση</Button>

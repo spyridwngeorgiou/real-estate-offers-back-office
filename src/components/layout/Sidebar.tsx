@@ -1,13 +1,14 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Building2, FileText, Users, BarChart3, X } from 'lucide-react'
+import { LayoutDashboard, Building2, FileText, Users, BarChart3, X, HelpCircle } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
 
 const NAV = [
   { to: '/',            icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/properties',  icon: Building2,       label: 'Ακίνητα' },
-  { to: '/offers',      icon: FileText,         label: 'Προσφορές' },
-  { to: '/contacts',    icon: Users,            label: 'Επαφές' },
-  { to: '/analytics',   icon: BarChart3,        label: 'Αναλυτικά' },
+  { to: '/offers',      icon: FileText,        label: 'Προσφορές' },
+  { to: '/contacts',    icon: Users,           label: 'Επαφές' },
+  { to: '/analytics',   icon: BarChart3,       label: 'Αναλυτικά' },
+  { to: '/guide',       icon: HelpCircle,      label: 'Οδηγός' },
 ]
 
 export function Sidebar() {

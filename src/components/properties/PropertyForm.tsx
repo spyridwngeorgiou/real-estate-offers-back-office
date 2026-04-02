@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { FormField, inputClass, selectClass } from '../ui/FormField'
 import { Button } from '../ui/Button'
+import { InlinePhotoPicker } from '../ui/InlinePhotoPicker'
 import { FLOOR_OPTIONS, ENERGY_RATINGS } from '../../lib/utils'
 import type { Property } from '../../types'
 
@@ -9,9 +10,10 @@ interface PropertyFormProps {
   onSubmit: (values: any) => Promise<void>
   onCancel: () => void
   loading?: boolean
+  onPhotosChange?: (files: File[]) => void
 }
 
-export function PropertyForm({ initial, onSubmit, onCancel, loading }: PropertyFormProps) {
+export function PropertyForm({ initial, onSubmit, onCancel, loading, onPhotosChange }: PropertyFormProps) {
   const { register, handleSubmit, formState: { errors } } = useForm({ defaultValues: initial ?? {} })
 
   return (
@@ -100,6 +102,10 @@ export function PropertyForm({ initial, onSubmit, onCancel, loading }: PropertyF
 
       <FormField label="Περιγραφή">
         <textarea {...register('description')} className={inputClass} rows={3} placeholder="Σύντομη περιγραφή ακινήτου…" />
+      </FormField>
+
+      <FormField label="Φωτογραφίες">
+        <InlinePhotoPicker onChange={onPhotosChange ?? (() => {})} />
       </FormField>
 
       <div className="flex justify-end gap-3 pt-2">
