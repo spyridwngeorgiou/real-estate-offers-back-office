@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Building2 } from 'lucide-react'
+import { Plus, Search, Building2, Download } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -9,7 +9,7 @@ import { Modal } from '../components/ui/Modal'
 import { PropertyForm } from '../components/properties/PropertyForm'
 import { useProperties, useCreateProperty, useUpdateProperty } from '../hooks/useProperties'
 import { useOffers } from '../hooks/useOffers'
-import { fmtMoney, pricePerSqm, PROPERTY_TYPE_LABELS, PROPERTY_STATUS_LABELS } from '../lib/utils'
+import { fmtMoney, pricePerSqm, PROPERTY_TYPE_LABELS, PROPERTY_STATUS_LABELS, exportCSV } from '../lib/utils'
 import { useUIStore } from '../store/uiStore'
 import { uploadFile } from '../lib/storage'
 import { supabase } from '../lib/supabase'
@@ -37,6 +37,7 @@ export function Properties() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Property | null>(null)
   const [pendingPhotos, setPendingPhotos] = useState<File[]>([])
+  const [formDirty, setFormDirty] = useState(false)
 
   const { data: properties = [], isLoading } = useProperties({ search, status: statusFilter || undefined })
   const { data: allOffers = [] } = useOffers()
@@ -73,9 +74,22 @@ export function Properties() {
   return (
     <div>
       <Topbar title="Ακίνητα" actions={
-        <Button variant="primary" onClick={() => { setEditTarget(null); setModalOpen(true) }}>
-          <Plus size={16} /> Νέο Ακίνητο
-        </Button>
+        <div className="flex gap-2">
+          {properties.length > 0 && (
+            <Button variant="secondary" onClick={() => exportCSV(properties.map(p => ({
+              'Διεύθυνση': p.address, 'Πόλη': p.city ?? '', 'Περιοχή': p.neighborhood ?? '',
+              'Τύπος': PROPERTY_TYPE_LABELS[p.property_type] ?? p.property_type,
+              'Κατάσταση': PROPERTY_STATUS_LABELS[p.status] ?? p.status,
+              'Τιμή (€)': p.list_price ?? '', 'Εμβαδόν (τ.μ.)': p.sqm ?? '',
+              'Υπνοδωμάτια': p.bedrooms ?? '', 'Κωδικός': p.listing_code ?? '',
+            })), `ακινητα-${new Date().toISOString().slice(0,10)}.csv`)}>
+              <Download size={15} /> CSV
+            </Button>
+          )}
+          <Button variant="primary" onClick={() => { setEditTarget(null); setModalOpen(true) }}>
+            <Plus size={16} /> Νέο Ακίνητο
+          </Button>
+        </div>
       } />
 
       <div className="p-4 lg:p-6">
@@ -133,14 +147,16 @@ export function Properties() {
         }
       </div>
 
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); setEditTarget(null) }}
+      <Modal open={modalOpen} dirty={formDirty}
+        onClose={() => { setModalOpen(false); setEditTarget(null); setFormDirty(false) }}
         title={editTarget ? 'Επεξεργασία Ακινήτου' : 'Νέο Ακίνητο'} size="lg">
         <PropertyForm
           initial={editTarget ?? undefined}
           onSubmit={handleSubmit}
-          onCancel={() => { setModalOpen(false); setEditTarget(null) }}
+          onCancel={() => { setModalOpen(false); setEditTarget(null); setFormDirty(false) }}
           loading={createProperty.isPending || updateProperty.isPending}
           onPhotosChange={setPendingPhotos}
+          onDirtyChange={setFormDirty}
         />
       </Modal>
     </div>

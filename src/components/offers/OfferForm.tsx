@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { ChevronDown, ChevronUp, MapPin, Euro, Maximize2 } from 'lucide-react'
 import { FormField, inputClass, selectClass } from '../ui/FormField'
@@ -16,6 +16,7 @@ interface OfferFormProps {
   onCancel: () => void
   loading?: boolean
   onPhotosChange?: (files: File[]) => void
+  onDirtyChange?: (dirty: boolean) => void
 }
 
 const WORK_CATEGORIES = ['electrical', 'plumbing', 'hvac', 'structural', 'finishing', 'equipment']
@@ -30,10 +31,10 @@ function contactIdField(category: string) {
   return WORK_CATEGORIES.includes(category) ? 'contractor_id' : 'buyer_id'
 }
 
-export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading, onPhotosChange }: OfferFormProps) {
+export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading, onPhotosChange, onDirtyChange }: OfferFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm({
+  const { register, handleSubmit, control, formState: { errors, isDirty } } = useForm({
     defaultValues: {
       ...initial,
       property_id: initial?.property_id ?? prePropertyId ?? '',
@@ -43,6 +44,8 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
       contact_person_id: (initial as any)?.buyer_id ?? (initial as any)?.contractor_id ?? '',
     }
   })
+
+  useEffect(() => { onDirtyChange?.(isDirty) }, [isDirty])
 
   const category = useWatch({ control, name: 'category' })
   const selectedPropertyId = useWatch({ control, name: 'property_id' })
@@ -118,7 +121,7 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
         <FormField label="Τιμή Προσφοράς (€)" required error={errors.offer_price?.message as string}
           hint={selectedProperty?.list_price ? `Ζητούμενη: ${fmtMoney(selectedProperty.list_price)}` : undefined}>
           <input
-            {...register('offer_price', { required: 'Απαιτείται τιμή', valueAsNumber: true })}
+            {...register('offer_price', { required: 'Απαιτείται τιμή', valueAsNumber: true, min: { value: 1, message: 'Η τιμή πρέπει να είναι μεγαλύτερη από 0' } })}
             type="number" className={inputClass} placeholder="305000"
           />
         </FormField>

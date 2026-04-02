@@ -1,8 +1,11 @@
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { FormField, inputClass, selectClass } from '../ui/FormField'
 import { Button } from '../ui/Button'
 import { InlinePhotoPicker } from '../ui/InlinePhotoPicker'
 import type { Contact } from '../../types'
+
+const PHONE_PATTERN = { value: /^[\d\s\+\-\(\)]{7,}$/, message: 'Μη έγκυρος αριθμός τηλεφώνου' }
 
 interface ContactFormProps {
   initial?: Partial<Contact>
@@ -10,10 +13,13 @@ interface ContactFormProps {
   onCancel: () => void
   loading?: boolean
   onPhotosChange?: (files: File[]) => void
+  onDirtyChange?: (dirty: boolean) => void
 }
 
-export function ContactForm({ initial, onSubmit, onCancel, loading, onPhotosChange }: ContactFormProps) {
-  const { register, handleSubmit, formState: { errors } } = useForm({ defaultValues: initial ?? {} })
+export function ContactForm({ initial, onSubmit, onCancel, loading, onPhotosChange, onDirtyChange }: ContactFormProps) {
+  const { register, handleSubmit, formState: { errors, isDirty } } = useForm({ defaultValues: initial ?? {} })
+
+  useEffect(() => { onDirtyChange?.(isDirty) }, [isDirty])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -40,20 +46,24 @@ export function ContactForm({ initial, onSubmit, onCancel, loading, onPhotosChan
           <input {...register('company')} className={inputClass} placeholder="π.χ. ERA Real Estate" />
         </FormField>
 
-        <FormField label="Email">
-          <input {...register('email')} type="email" className={inputClass} placeholder="email@example.com" />
+        <FormField label="Email" error={errors.email?.message as string}>
+          <input {...register('email', {
+            pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Μη έγκυρο email' }
+          })} type="email" className={inputClass} placeholder="email@example.com" />
         </FormField>
-        <FormField label="Τηλέφωνο">
-          <input {...register('phone')} className={inputClass} placeholder="+30 21 0000 0000" />
+        <FormField label="Τηλέφωνο" error={errors.phone?.message as string}>
+          <input {...register('phone', { pattern: PHONE_PATTERN })} className={inputClass} placeholder="+30 21 0000 0000" />
         </FormField>
-        <FormField label="Κινητό">
-          <input {...register('mobile')} className={inputClass} placeholder="+30 69 0000 0000" />
+        <FormField label="Κινητό" error={errors.mobile?.message as string}>
+          <input {...register('mobile', { pattern: PHONE_PATTERN })} className={inputClass} placeholder="+30 69 0000 0000" />
         </FormField>
         <FormField label="Αριθμός Άδειας (μεσίτες)">
           <input {...register('license_no')} className={inputClass} placeholder="ΑΡ-12345" />
         </FormField>
-        <FormField label="ΑΦΜ">
-          <input {...register('tax_id')} className={inputClass} placeholder="123456789" />
+        <FormField label="ΑΦΜ" error={errors.tax_id?.message as string}>
+          <input {...register('tax_id', {
+            pattern: { value: /^\d{9}$/, message: 'Το ΑΦΜ πρέπει να έχει 9 ψηφία' }
+          })} className={inputClass} placeholder="123456789" />
         </FormField>
         <div className="sm:col-span-2">
           <FormField label="Διεύθυνση">

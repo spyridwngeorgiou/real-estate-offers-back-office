@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Users, Mail, Phone, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Search, Users, Mail, Phone, ArrowUp, ArrowDown, Download } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -8,7 +8,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Modal } from '../components/ui/Modal'
 import { ContactForm } from '../components/contacts/ContactForm'
 import { useContacts, useCreateContact } from '../hooks/useContacts'
-import { CONTACT_TYPE_LABELS } from '../lib/utils'
+import { CONTACT_TYPE_LABELS, exportCSV } from '../lib/utils'
 import { useUIStore } from '../store/uiStore'
 import { uploadFile } from '../lib/storage'
 import { supabase } from '../lib/supabase'
@@ -32,6 +32,7 @@ export function Contacts() {
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [pendingPhotos, setPendingPhotos] = useState<File[]>([])
+  const [formDirty, setFormDirty] = useState(false)
   const [sortCol, setSortCol] = useState('full_name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   function toggleSort(col: string) {
@@ -76,9 +77,21 @@ export function Contacts() {
   return (
     <div>
       <Topbar title="Επαφές" actions={
-        <Button variant="primary" onClick={() => setModalOpen(true)}>
-          <Plus size={16} /> Νέα Επαφή
-        </Button>
+        <div className="flex gap-2">
+          {contacts.length > 0 && (
+            <Button variant="secondary" onClick={() => exportCSV(contacts.map(c => ({
+              'Ονοματεπώνυμο': c.full_name, 'Τύπος': CONTACT_TYPE_LABELS[c.contact_type] ?? c.contact_type,
+              'Εταιρεία': c.company ?? '', 'Email': c.email ?? '',
+              'Τηλέφωνο': c.phone ?? '', 'Κινητό': c.mobile ?? '',
+              'ΑΦΜ': c.tax_id ?? '', 'Διεύθυνση': c.address ?? '',
+            })), `επαφες-${new Date().toISOString().slice(0,10)}.csv`)}>
+              <Download size={15} /> CSV
+            </Button>
+          )}
+          <Button variant="primary" onClick={() => setModalOpen(true)}>
+            <Plus size={16} /> Νέα Επαφή
+          </Button>
+        </div>
       } />
 
       <div className="p-4 lg:p-6">
@@ -163,8 +176,8 @@ export function Contacts() {
         }
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Νέα Επαφή" size="md">
-        <ContactForm onSubmit={handleCreate} onCancel={() => setModalOpen(false)} loading={createContact.isPending} onPhotosChange={setPendingPhotos} />
+      <Modal open={modalOpen} dirty={formDirty} onClose={() => { setModalOpen(false); setFormDirty(false) }} title="Νέα Επαφή" size="md">
+        <ContactForm onSubmit={handleCreate} onCancel={() => { setModalOpen(false); setFormDirty(false) }} loading={createContact.isPending} onPhotosChange={setPendingPhotos} onDirtyChange={setFormDirty} />
       </Modal>
     </div>
   )

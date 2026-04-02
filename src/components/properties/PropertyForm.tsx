@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { FormField, inputClass, selectClass } from '../ui/FormField'
@@ -13,11 +13,13 @@ interface PropertyFormProps {
   onCancel: () => void
   loading?: boolean
   onPhotosChange?: (files: File[]) => void
+  onDirtyChange?: (dirty: boolean) => void
 }
 
-export function PropertyForm({ initial, onSubmit, onCancel, loading, onPhotosChange }: PropertyFormProps) {
+export function PropertyForm({ initial, onSubmit, onCancel, loading, onPhotosChange, onDirtyChange }: PropertyFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm({ defaultValues: initial ?? {} })
+  const { register, handleSubmit, formState: { errors, isDirty } } = useForm({ defaultValues: initial ?? {} })
+  useEffect(() => { onDirtyChange?.(isDirty) }, [isDirty])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -61,14 +63,14 @@ export function PropertyForm({ initial, onSubmit, onCancel, loading, onPhotosCha
           </select>
         </FormField>
 
-        <FormField label="Τιμή Πώλησης (€)" hint="Ζητούμενη τιμή">
-          <input {...register('list_price', { valueAsNumber: true })} type="number"
-            className={inputClass} placeholder="320000" />
+        <FormField label="Τιμή Πώλησης (€)" hint="Ζητούμενη τιμή" error={errors.list_price?.message as string}>
+          <input {...register('list_price', { valueAsNumber: true, min: { value: 1, message: 'Η τιμή πρέπει να είναι μεγαλύτερη από 0' } })}
+            type="number" className={inputClass} placeholder="320000" />
         </FormField>
 
-        <FormField label="Εμβαδόν (τ.μ.)">
-          <input {...register('sqm', { valueAsNumber: true })} type="number" step="0.01"
-            className={inputClass} placeholder="95" />
+        <FormField label="Εμβαδόν (τ.μ.)" error={errors.sqm?.message as string}>
+          <input {...register('sqm', { valueAsNumber: true, min: { value: 1, message: 'Το εμβαδόν πρέπει να είναι μεγαλύτερο από 0' } })}
+            type="number" step="0.01" className={inputClass} placeholder="95" />
         </FormField>
       </div>
 

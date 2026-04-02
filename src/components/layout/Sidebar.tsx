@@ -1,18 +1,25 @@
+import { useState, useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Building2, FileText, Users, BarChart3, X, HelpCircle } from 'lucide-react'
+import { LayoutDashboard, Building2, FileText, Users, BarChart3, X, HelpCircle, LogOut } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
+import { supabase } from '../../lib/supabase'
 
 const NAV = [
-  { to: '/',            icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/properties',  icon: Building2,       label: 'Ακίνητα' },
-  { to: '/offers',      icon: FileText,        label: 'Προσφορές' },
-  { to: '/contacts',    icon: Users,           label: 'Επαφές' },
-  { to: '/analytics',   icon: BarChart3,       label: 'Αναλυτικά' },
-  { to: '/guide',       icon: HelpCircle,      label: 'Οδηγός' },
+  { to: '/',           icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/properties', icon: Building2,       label: 'Ακίνητα' },
+  { to: '/offers',     icon: FileText,        label: 'Προσφορές' },
+  { to: '/contacts',   icon: Users,           label: 'Επαφές' },
+  { to: '/analytics',  icon: BarChart3,       label: 'Αναλυτικά' },
+  { to: '/guide',      icon: HelpCircle,      label: 'Οδηγός' },
 ]
 
 export function Sidebar() {
   const { sidebarOpen, toggleSidebar } = useUIStore()
+  const [userEmail, setUserEmail] = useState('')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? ''))
+  }, [])
 
   return (
     <>
@@ -36,9 +43,7 @@ export function Sidebar() {
         <nav className="flex-1 px-3 py-4 space-y-1">
           {NAV.map(({ to, icon: Icon, label }) => (
             <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
+              key={to} to={to} end={to === '/'}
               onClick={() => { if (sidebarOpen) toggleSidebar() }}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -51,8 +56,18 @@ export function Sidebar() {
           ))}
         </nav>
 
-        <div className="px-5 py-4 border-t border-slate-700 text-xs text-slate-500">
-          RE Offers Greece © 2026
+        <div className="px-4 py-4 border-t border-slate-700 space-y-3">
+          {userEmail && (
+            <p className="text-xs text-slate-500 truncate" title={userEmail}>{userEmail}</p>
+          )}
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="flex items-center gap-2 text-xs text-slate-400 hover:text-white transition-colors w-full"
+          >
+            <LogOut size={14} />
+            Αποσύνδεση
+          </button>
+          <p className="text-xs text-slate-600">RE Offers Greece © 2026</p>
         </div>
       </aside>
     </>

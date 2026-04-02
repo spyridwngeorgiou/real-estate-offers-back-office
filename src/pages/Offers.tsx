@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, FileText, GitCompare, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Search, FileText, GitCompare, ArrowUp, ArrowDown, Download } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -9,7 +9,7 @@ import { Modal } from '../components/ui/Modal'
 import { OfferForm } from '../components/offers/OfferForm'
 import { OfferCompare } from '../components/offers/OfferCompare'
 import { useOffers, useCreateOffer } from '../hooks/useOffers'
-import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS } from '../lib/utils'
+import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, exportCSV } from '../lib/utils'
 import { useUIStore } from '../store/uiStore'
 import { uploadFile } from '../lib/storage'
 import { supabase } from '../lib/supabase'
@@ -37,6 +37,7 @@ export function Offers() {
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [pendingPhotos, setPendingPhotos] = useState<File[]>([])
+  const [formDirty, setFormDirty] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [compareOpen, setCompareOpen] = useState(false)
   const [sortCol, setSortCol] = useState<string>('offer_date')
@@ -91,6 +92,17 @@ export function Offers() {
     <div>
       <Topbar title="Προσφορές" actions={
         <div className="flex gap-2">
+          {filtered.length > 0 && (
+            <Button variant="secondary" onClick={() => exportCSV(filtered.map((o: any) => ({
+              'Ακίνητο': o.property?.address ?? '', 'Πόλη': o.property?.city ?? '',
+              'Κατηγορία': OFFER_CATEGORY_LABELS[o.category] ?? o.category ?? '',
+              'Επαφή': o.buyer?.full_name ?? o.contractor?.full_name ?? '',
+              'Τιμή (€)': o.offer_price, 'Κατάσταση': OFFER_STATUS_LABELS[o.status] ?? o.status,
+              'Ημερομηνία': fmtDate(o.offer_date), 'Λήξη': fmtDate(o.expires_at),
+            })), `προσφορες-${new Date().toISOString().slice(0,10)}.csv`)}>
+              <Download size={15} /> CSV
+            </Button>
+          )}
           {selectedIds.size >= 2 && (
             <Button variant="secondary" onClick={() => setCompareOpen(true)}>
               <GitCompare size={16} /> Σύγκριση ({selectedIds.size})
@@ -212,8 +224,8 @@ export function Offers() {
         }
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Νέα Προσφορά" size="lg">
-        <OfferForm onSubmit={handleCreate} onCancel={() => setModalOpen(false)} loading={createOffer.isPending} onPhotosChange={setPendingPhotos} />
+      <Modal open={modalOpen} dirty={formDirty} onClose={() => { setModalOpen(false); setFormDirty(false) }} title="Νέα Προσφορά" size="lg">
+        <OfferForm onSubmit={handleCreate} onCancel={() => { setModalOpen(false); setFormDirty(false) }} loading={createOffer.isPending} onPhotosChange={setPendingPhotos} onDirtyChange={setFormDirty} />
       </Modal>
 
       {compareOpen && (
