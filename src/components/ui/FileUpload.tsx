@@ -27,7 +27,7 @@ export function FileUpload({ entityType, entityId }: FileUploadProps) {
   async function handleFiles(fileList: FileList | null) {
     if (!fileList?.length) return
     for (const file of Array.from(fileList)) {
-      if (file.size > 10 * 1024 * 1024) { addToast('Μέγιστο μέγεθος: 10MB', 'error'); continue }
+      if (file.size > 100 * 1024 * 1024) { addToast('Μέγιστο μέγεθος: 100MB', 'error'); continue }
       await uploadMutation.mutateAsync({ file, label })
     }
     addToast('Αρχείο ανέβηκε επιτυχώς', 'success')
@@ -54,7 +54,7 @@ export function FileUpload({ entityType, entityId }: FileUploadProps) {
           : <Upload size={24} className="mx-auto text-slate-400 mb-2" />
         }
         <p className="text-sm text-slate-500">{uploadMutation.isPending ? 'Μεταφόρτωση…' : 'Σύρετε αρχεία ή κάντε κλικ'}</p>
-        <p className="text-xs text-slate-400 mt-1">PDF, JPG, PNG, DOCX — έως 10MB</p>
+        <p className="text-xs text-slate-400 mt-1">PDF, JPG, PNG, DOCX — αποθήκευση μέσω Cloudinary</p>
         <input ref={inputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" className="hidden" onChange={e => handleFiles(e.target.files)} />
       </div>
 
