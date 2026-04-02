@@ -4,7 +4,7 @@ import { Button } from '../ui/Button'
 import { InlinePhotoPicker } from '../ui/InlinePhotoPicker'
 import { useProperties } from '../../hooks/useProperties'
 import { useContacts } from '../../hooks/useContacts'
-import { FINANCING_OPTIONS } from '../../lib/utils'
+import { FINANCING_OPTIONS, OFFER_CATEGORY_LABELS } from '../../lib/utils'
 import type { Offer } from '../../types'
 
 interface OfferFormProps {
@@ -30,10 +30,19 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
   const { data: buyers = [] } = useContacts({ type: 'buyer' })
   const { data: agents = [] } = useContacts({ type: 'agent' })
   const { data: notaries = [] } = useContacts({ type: 'notary' })
+  const { data: suppliers = [] } = useContacts({ type: 'supplier' })
+  const { data: contractors = [] } = useContacts({ type: 'contractor' })
+  const contractorOptions = [...suppliers, ...contractors]
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <FormField label="Κατηγορία">
+          <select {...register('category')} className={selectClass}>
+            <option value="">— Επιλέξτε Κατηγορία —</option>
+            {Object.entries(OFFER_CATEGORY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </FormField>
         <div className="sm:col-span-2">
           <FormField label="Ακίνητο" required error={errors.property_id?.message as string}>
             <select {...register('property_id', { required: 'Απαιτείται' })} className={selectClass}>
@@ -47,6 +56,12 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
           <select {...register('buyer_id')} className={selectClass}>
             <option value="">— Επιλέξτε —</option>
             {buyers.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+          </select>
+        </FormField>
+        <FormField label="Ανάδοχος / Τεχνίτης">
+          <select {...register('contractor_id')} className={selectClass}>
+            <option value="">— Επιλέξτε —</option>
+            {contractorOptions.map(c => <option key={c.id} value={c.id}>{c.full_name}{c.company ? ` (${c.company})` : ''}</option>)}
           </select>
         </FormField>
         <FormField label="Μεσίτης Αγοραστή">

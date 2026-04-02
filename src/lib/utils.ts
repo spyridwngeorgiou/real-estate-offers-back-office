@@ -47,7 +47,19 @@ export const OFFER_STATUS_LABELS: Record<string, string> = {
 
 export const CONTACT_TYPE_LABELS: Record<string, string> = {
   buyer: 'Αγοραστής', seller: 'Πωλητής', agent: 'Μεσίτης',
-  notary: 'Συμβολαιογράφος', lawyer: 'Δικηγόρος', other: 'Άλλο',
+  notary: 'Συμβολαιογράφος', lawyer: 'Δικηγόρος',
+  supplier: 'Προμηθευτής', contractor: 'Ανάδοχος', other: 'Άλλο',
+}
+
+export const OFFER_CATEGORY_LABELS: Record<string, string> = {
+  electrical: 'Ηλεκτρολογικά',
+  plumbing: 'Υδραυλικά',
+  hvac: 'Κλιματισμός / HVAC',
+  structural: 'Δομικά',
+  finishing: 'Φινίρισμα',
+  equipment: 'Εξοπλισμός',
+  purchase: 'Αγορά Ακινήτου',
+  other: 'Άλλο',
 }
 
 export const FLOOR_OPTIONS = [

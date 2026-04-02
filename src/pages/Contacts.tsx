@@ -20,6 +20,8 @@ const TYPE_OPTIONS = [
   { value: 'agent', label: 'Μεσίτες' },
   { value: 'notary', label: 'Συμβολαιογράφοι' },
   { value: 'lawyer', label: 'Δικηγόροι' },
+  { value: 'supplier', label: 'Προμηθευτές' },
+  { value: 'contractor', label: 'Ανάδοχοι / Τεχνίτες' },
   { value: 'other', label: 'Άλλοι' },
 ]
 

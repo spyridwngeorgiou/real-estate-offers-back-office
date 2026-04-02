@@ -31,6 +31,8 @@ export function ContactForm({ initial, onSubmit, onCancel, loading, onPhotosChan
             <option value="agent">Μεσίτης</option>
             <option value="notary">Συμβολαιογράφος</option>
             <option value="lawyer">Δικηγόρος</option>
+            <option value="supplier">Προμηθευτής</option>
+            <option value="contractor">Ανάδοχος / Τεχνίτης</option>
             <option value="other">Άλλο</option>
           </select>
         </FormField>

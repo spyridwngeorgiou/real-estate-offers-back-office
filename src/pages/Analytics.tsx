@@ -3,7 +3,7 @@ import { StatCard } from '../components/ui/StatCard'
 import { Badge } from '../components/ui/Badge'
 import { useProperties } from '../hooks/useProperties'
 import { useOffers } from '../hooks/useOffers'
-import { fmtMoney, OFFER_STATUS_LABELS, PROPERTY_STATUS_LABELS } from '../lib/utils'
+import { fmtMoney, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, PROPERTY_STATUS_LABELS, PROPERTY_TYPE_LABELS } from '../lib/utils'
 
 export function Analytics() {
   const { data: properties = [] } = useProperties()
@@ -36,6 +36,24 @@ export function Analytics() {
   }))
 
   const maxPropCount = Math.max(...propStatusBreakdown.map(s => s.count), 1)
+
+  // By category
+  const categoryBreakdown = Object.keys(OFFER_CATEGORY_LABELS).map(cat => ({
+    category: cat,
+    label: OFFER_CATEGORY_LABELS[cat],
+    count: offers.filter((o: any) => o.category === cat).length,
+    value: offers.filter((o: any) => o.category === cat).reduce((s: number, o: any) => s + o.offer_price, 0),
+  })).filter(c => c.count > 0)
+  const maxCatCount = Math.max(...categoryBreakdown.map(c => c.count), 1)
+
+  // By property type
+  const propTypeBreakdown = Object.keys(PROPERTY_TYPE_LABELS).map(t => ({
+    type: t,
+    label: PROPERTY_TYPE_LABELS[t],
+    count: properties.filter(p => p.property_type === t).length,
+    value: properties.filter(p => p.property_type === t).reduce((s, p) => s + (p.list_price ?? 0), 0),
+  })).filter(t => t.count > 0)
+  const maxTypeCount = Math.max(...propTypeBreakdown.map(t => t.count), 1)
 
   // Top properties by offer count
   const propOfferCounts = properties
@@ -109,6 +127,53 @@ export function Analytics() {
             </div>
           </div>
         </div>
+
+        {/* Category breakdown */}
+        {categoryBreakdown.length > 0 && (
+          <div className="grid lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <h2 className="font-semibold text-slate-900 mb-4">Προσφορές ανά Κατηγορία</h2>
+              <div className="space-y-3">
+                {categoryBreakdown.map(({ category, label, count, value }) => (
+                  <div key={category}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-slate-700">{label}</span>
+                        <span className="text-sm font-semibold text-slate-900">{count}</span>
+                      </div>
+                      <span className="text-xs text-slate-400">{fmtMoney(value || null)}</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                        style={{ width: `${(count / maxCatCount) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <h2 className="font-semibold text-slate-900 mb-4">Ακίνητα ανά Τύπο</h2>
+              <div className="space-y-3">
+                {propTypeBreakdown.map(({ type, label, count, value }) => (
+                  <div key={type}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-slate-700">{label}</span>
+                        <span className="text-sm font-semibold text-slate-900">{count}</span>
+                      </div>
+                      <span className="text-xs text-slate-400">{fmtMoney(value || null)}</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-violet-500 rounded-full transition-all duration-500"
+                        style={{ width: `${(count / maxTypeCount) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Top properties */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">

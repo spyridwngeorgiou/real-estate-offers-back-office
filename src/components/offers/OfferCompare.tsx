@@ -1,11 +1,11 @@
 import { X } from 'lucide-react'
 import { Badge } from '../ui/Badge'
-import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, FINANCING_OPTIONS } from '../../lib/utils'
+import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, FINANCING_OPTIONS } from '../../lib/utils'
 import type { Property } from '../../types'
 
 interface OfferCompareProps {
   offers: any[]
-  property: Property
+  property?: Property
   onClose: () => void
 }
 
@@ -19,13 +19,17 @@ export function OfferCompare({ offers, property, onClose }: OfferCompareProps) {
       </span>
     )},
     { label: '% vs Ζητούμενη', render: (o) => {
-      const list = property.list_price
-      if (!list) return <span>—</span>
+      const list = property?.list_price ?? o.property?.list_price
+      if (!list) return <span className="text-slate-400">—</span>
       const pct = ((o.offer_price - list) / list * 100).toFixed(1)
       return <span className={Number(pct) >= 0 ? 'text-green-600' : 'text-red-600'}>{Number(pct) >= 0 ? '+' : ''}{pct}%</span>
     }},
+    ...(!property ? [{ label: 'Ακίνητο', render: (o: any) => (
+      <span className="text-sm">{o.property?.address ?? '—'}<br/><span className="text-xs text-slate-400">{o.property?.city ?? ''}</span></span>
+    )}] : []),
+    { label: 'Κατηγορία', render: (o) => <span>{o.category ? (OFFER_CATEGORY_LABELS[o.category] ?? o.category) : '—'}</span> },
     { label: 'Κατάσταση', render: (o) => <Badge label={OFFER_STATUS_LABELS[o.status] ?? o.status} variant={o.status} /> },
-    { label: 'Αγοραστής', render: (o) => <span>{o.buyer?.full_name ?? '—'}</span> },
+    { label: 'Αγοραστής / Ανάδοχος', render: (o) => <span>{o.buyer?.full_name ?? o.contractor?.full_name ?? '—'}</span> },
     { label: 'Αρραβώνας', render: (o) => <span>{fmtMoney(o.earnest_money)}</span> },
     { label: 'Χρηματοδότηση', render: (o) => <span>{FINANCING_OPTIONS.find(f => f.value === o.financing)?.label ?? o.financing ?? '—'}</span> },
     { label: 'Due Diligence', render: (o) => <span>{o.due_diligence_days ? `${o.due_diligence_days} ημέρες` : '—'}</span> },
@@ -41,7 +45,9 @@ export function OfferCompare({ offers, property, onClose }: OfferCompareProps) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
           <div>
             <h2 className="text-lg font-semibold">Σύγκριση Προσφορών</h2>
-            <p className="text-sm text-slate-500">{property.address} — Ζητούμενη: {fmtMoney(property.list_price)}</p>
+            <p className="text-sm text-slate-500">
+              {property ? `${property.address} — Ζητούμενη: ${fmtMoney(property.list_price)}` : `${offers.length} προσφορές από διαφορετικά ακίνητα`}
+            </p>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100"><X size={20} /></button>
         </div>

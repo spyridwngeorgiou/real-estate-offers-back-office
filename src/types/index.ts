@@ -1,7 +1,7 @@
 export type PropertyType = 'apartment' | 'maisonette' | 'villa' | 'single_family' | 'plot' | 'commercial' | 'office' | 'other'
 export type PropertyStatus = 'listed' | 'under_offer' | 'sold' | 'expired' | 'off_market'
 export type OfferStatus = 'pending' | 'countered' | 'accepted' | 'rejected' | 'withdrawn' | 'signed'
-export type ContactType = 'buyer' | 'seller' | 'agent' | 'notary' | 'lawyer' | 'other'
+export type ContactType = 'buyer' | 'seller' | 'agent' | 'notary' | 'lawyer' | 'supplier' | 'contractor' | 'other'
 export type FinancingType = 'cash' | 'mortgage' | 'pre_approved' | 'other'
 
 export interface Property {
@@ -50,9 +50,11 @@ export interface Offer {
   id: string
   property_id: string
   buyer_id: string | null
+  contractor_id: string | null
   seller_agent_id: string | null
   buyer_agent_id: string | null
   notary_id: string | null
+  category: string | null
   offer_price: number
   earnest_money: number | null
   down_payment: number | null

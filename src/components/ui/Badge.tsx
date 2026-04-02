@@ -2,7 +2,7 @@ interface BadgeProps {
   label: string
   variant: 'pending' | 'countered' | 'accepted' | 'rejected' | 'withdrawn' | 'signed' |
            'listed' | 'under_offer' | 'sold' | 'expired' | 'off_market' |
-           'buyer' | 'seller' | 'agent' | 'notary' | 'lawyer' | 'other' | 'default'
+           'buyer' | 'seller' | 'agent' | 'notary' | 'lawyer' | 'supplier' | 'contractor' | 'other' | 'default'
 }
 
 const VARIANTS: Record<string, string> = {
@@ -22,6 +22,8 @@ const VARIANTS: Record<string, string> = {
   agent:        'bg-cyan-100 text-cyan-800',
   notary:       'bg-indigo-100 text-indigo-800',
   lawyer:       'bg-pink-100 text-pink-800',
+  supplier:     'bg-teal-100 text-teal-800',
+  contractor:   'bg-violet-100 text-violet-800',
   other:        'bg-slate-100 text-slate-600',
   default:      'bg-slate-100 text-slate-600',
 }
