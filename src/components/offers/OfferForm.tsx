@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, MapPin, Euro, Maximize2 } from 'lucide-react'
 import { FormField, inputClass, selectClass } from '../ui/FormField'
 import { Button } from '../ui/Button'
 import { InlinePhotoPicker } from '../ui/InlinePhotoPicker'
 import { useProperties } from '../../hooks/useProperties'
 import { useContacts } from '../../hooks/useContacts'
-import { FINANCING_OPTIONS, OFFER_CATEGORY_LABELS } from '../../lib/utils'
+import { FINANCING_OPTIONS, OFFER_CATEGORY_LABELS, fmtMoney, pricePerSqm, PROPERTY_TYPE_LABELS } from '../../lib/utils'
 import type { Offer } from '../../types'
 
 interface OfferFormProps {
@@ -18,8 +18,17 @@ interface OfferFormProps {
   onPhotosChange?: (files: File[]) => void
 }
 
-const PURCHASE_CATEGORY = 'purchase'
 const WORK_CATEGORIES = ['electrical', 'plumbing', 'hvac', 'structural', 'finishing', 'equipment']
+
+function contactFieldLabel(category: string) {
+  if (category === 'purchase') return 'Αγοραστής'
+  if (WORK_CATEGORIES.includes(category)) return 'Ανάδοχος / Τεχνίτης'
+  return 'Επαφή (αγοραστής, ανάδοχος ή άλλος)'
+}
+
+function contactIdField(category: string) {
+  return WORK_CATEGORIES.includes(category) ? 'contractor_id' : 'buyer_id'
+}
 
 export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading, onPhotosChange }: OfferFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -31,26 +40,39 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
       offer_date: initial?.offer_date ?? new Date().toISOString().slice(0, 10),
       status: initial?.status ?? 'pending',
       category: (initial as any)?.category ?? '',
+      contact_person_id: (initial as any)?.buyer_id ?? (initial as any)?.contractor_id ?? '',
     }
   })
 
   const category = useWatch({ control, name: 'category' })
-  const isPurchase = !category || category === PURCHASE_CATEGORY
-  const isWork = WORK_CATEGORIES.includes(category)
+  const selectedPropertyId = useWatch({ control, name: 'property_id' })
+  const isPurchase = !category || category === 'purchase'
 
   const { data: properties = [] } = useProperties()
-  const { data: buyers = [] } = useContacts({ type: 'buyer' })
+  const { data: allContacts = [] } = useContacts()
   const { data: agents = [] } = useContacts({ type: 'agent' })
   const { data: notaries = [] } = useContacts({ type: 'notary' })
-  const { data: suppliers = [] } = useContacts({ type: 'supplier' })
-  const { data: contractors = [] } = useContacts({ type: 'contractor' })
-  const contractorOptions = [...suppliers, ...contractors]
+
+  const selectedProperty = properties.find(p => p.id === selectedPropertyId)
+
+  // Build form values: map contact_person_id to the right column
+  async function handleSubmitWrapped(raw: any) {
+    const { contact_person_id, ...rest } = raw
+    const field = contactIdField(raw.category)
+    const values = {
+      ...rest,
+      buyer_id: field === 'buyer_id' ? contact_person_id || null : null,
+      contractor_id: field === 'contractor_id' ? contact_person_id || null : null,
+    }
+    await onSubmit(values)
+  }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {/* Step 1 — What kind of offer? */}
+    <form onSubmit={handleSubmit(handleSubmitWrapped)} className="space-y-5">
+
+      {/* Category + Status */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FormField label="Κατηγορία" hint="Τι αφορά η προσφορά;">
+        <FormField label="Κατηγορία" hint="Τι αφορά αυτή η προσφορά;">
           <select {...register('category')} className={selectClass}>
             <option value="">— Επιλέξτε —</option>
             {Object.entries(OFFER_CATEGORY_LABELS).map(([v, l]) => (
@@ -58,7 +80,6 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
             ))}
           </select>
         </FormField>
-
         <FormField label="Κατάσταση">
           <select {...register('status')} className={selectClass}>
             <option value="pending">Εκκρεμής</option>
@@ -69,54 +90,55 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
             <option value="signed">Υπογράφηκε</option>
           </select>
         </FormField>
-
-        <div className="sm:col-span-2">
-          <FormField label="Ακίνητο" required error={errors.property_id?.message as string}>
-            <select {...register('property_id', { required: 'Παρακαλώ επιλέξτε ακίνητο' })} className={selectClass}>
-              <option value="">— Επιλέξτε Ακίνητο —</option>
-              {properties.map(p => (
-                <option key={p.id} value={p.id}>{p.address}{p.city ? `, ${p.city}` : ''}</option>
-              ))}
-            </select>
-          </FormField>
-        </div>
       </div>
 
-      {/* Step 2 — Price + Person */}
+      {/* Property picker + preview */}
+      <div>
+        <FormField label="Ακίνητο" required error={errors.property_id?.message as string}>
+          <select {...register('property_id', { required: 'Παρακαλώ επιλέξτε ακίνητο' })} className={selectClass}>
+            <option value="">— Επιλέξτε Ακίνητο —</option>
+            {properties.map(p => (
+              <option key={p.id} value={p.id}>{p.address}{p.city ? `, ${p.city}` : ''}</option>
+            ))}
+          </select>
+        </FormField>
+        {selectedProperty && (
+          <div className="mt-2 flex flex-wrap gap-3 bg-blue-50 border border-blue-100 rounded-lg px-4 py-2.5 text-xs text-blue-800">
+            <span className="flex items-center gap-1"><MapPin size={12} />{selectedProperty.address}{selectedProperty.city ? `, ${selectedProperty.city}` : ''}</span>
+            {selectedProperty.list_price && <span className="flex items-center gap-1 font-semibold"><Euro size={12} />{fmtMoney(selectedProperty.list_price)}</span>}
+            {selectedProperty.sqm && <span className="flex items-center gap-1"><Maximize2 size={12} />{selectedProperty.sqm} τ.μ.</span>}
+            {selectedProperty.sqm && selectedProperty.list_price && <span className="text-blue-600">{pricePerSqm(selectedProperty.list_price, selectedProperty.sqm)}</span>}
+            <span className="text-blue-500">{PROPERTY_TYPE_LABELS[selectedProperty.property_type]}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Price + Date + Contact */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField label="Τιμή Προσφοράς (€)" required error={errors.offer_price?.message as string}
-          hint="Ποσό σε ευρώ χωρίς κόμματα">
+          hint={selectedProperty?.list_price ? `Ζητούμενη: ${fmtMoney(selectedProperty.list_price)}` : undefined}>
           <input
-            {...register('offer_price', { required: 'Απαιτείται τιμή προσφοράς', valueAsNumber: true })}
+            {...register('offer_price', { required: 'Απαιτείται τιμή', valueAsNumber: true })}
             type="number" className={inputClass} placeholder="305000"
           />
         </FormField>
-
         <FormField label="Ημερομηνία Προσφοράς" required>
           <input {...register('offer_date', { required: true })} type="date" className={inputClass} />
         </FormField>
 
-        {/* Show buyer for purchase or no category */}
-        {!isWork && (
-          <FormField label="Αγοραστής" hint="Προσθέστε τον αγοραστή από την καρτέλα Επαφές">
-            <select {...register('buyer_id')} className={selectClass}>
-              <option value="">— Επιλέξτε Αγοραστή —</option>
-              {buyers.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
-            </select>
-          </FormField>
-        )}
-
-        {/* Show contractor for work categories or when explicitly work */}
-        {!isPurchase && (
-          <FormField label="Ανάδοχος / Τεχνίτης" hint="Προσθέστε τον ανάδοχο από την καρτέλα Επαφές">
-            <select {...register('contractor_id')} className={selectClass}>
-              <option value="">— Επιλέξτε Ανάδοχο —</option>
-              {contractorOptions.map(c => (
-                <option key={c.id} value={c.id}>{c.full_name}{c.company ? ` — ${c.company}` : ''}</option>
+        <div className="sm:col-span-2">
+          <FormField label={contactFieldLabel(category)}>
+            <select {...register('contact_person_id')} className={selectClass}>
+              <option value="">— Επιλέξτε —</option>
+              {allContacts.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.full_name}{c.company ? ` — ${c.company}` : ''}
+                  {' '}({c.contact_type === 'buyer' ? 'Αγοραστής' : c.contact_type === 'contractor' ? 'Ανάδοχος' : c.contact_type === 'supplier' ? 'Προμηθευτής' : c.contact_type === 'agent' ? 'Μεσίτης' : c.contact_type})
+                </option>
               ))}
             </select>
           </FormField>
-        )}
+        </div>
       </div>
 
       {/* Advanced toggle */}
@@ -132,7 +154,7 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
 
         {showAdvanced && (
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-            <FormField label="Λήξη Προσφοράς" hint="Ημερομηνία μέχρι την οποία ισχύει">
+            <FormField label="Λήξη Προσφοράς" hint="Μέχρι πότε ισχύει">
               <input {...register('expires_at')} type="date" className={inputClass} />
             </FormField>
             <FormField label="Ημ. Υπογραφής Συμβολαίου">
@@ -141,7 +163,7 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
 
             {isPurchase && (
               <>
-                <FormField label="Αρραβώνας (€)" hint="Ποσό προκαταβολής">
+                <FormField label="Αρραβώνας (€)">
                   <input {...register('earnest_money', { valueAsNumber: true })} type="number" className={inputClass} placeholder="10000" />
                 </FormField>
                 <FormField label="Ίδια Κεφάλαια (€)">
@@ -153,7 +175,7 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
                     {FINANCING_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                   </select>
                 </FormField>
-                <FormField label="Due Diligence (ημέρες)" hint="Πόσες μέρες έχει ο αγοραστής για έλεγχο">
+                <FormField label="Due Diligence (ημέρες)">
                   <input {...register('due_diligence_days', { valueAsNumber: true })} type="number" className={inputClass} placeholder="10" />
                 </FormField>
                 <FormField label="Μεσίτης Αγοραστή">

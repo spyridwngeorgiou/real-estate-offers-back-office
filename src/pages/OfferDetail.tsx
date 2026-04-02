@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Edit, Trash2, Plus } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, Plus, Check, X as XIcon } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -126,19 +126,48 @@ export function OfferDetail() {
             </div>
           </div>
 
-          {/* Quick status change */}
-          {availableTransitions.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
-              <span className="text-xs text-slate-500 self-center mr-1">Γρήγορη αλλαγή:</span>
-              {availableTransitions.map(s => (
-                <Button key={s} size="sm"
-                  variant={s === 'accepted' || s === 'signed' ? 'primary' : s === 'rejected' || s === 'withdrawn' ? 'danger' : 'secondary'}
-                  onClick={() => s === 'countered' ? setCounterOpen(true) : handleStatusChange(s)}>
-                  {STATUS_LABELS_BTN[s]}
-                </Button>
-              ))}
+          {/* Visual status stepper */}
+          <div className="mt-5 pt-4 border-t border-slate-100">
+            {/* Main flow */}
+            <div className="flex items-center gap-1 flex-wrap">
+              {(['pending', 'countered', 'accepted', 'signed'] as const).map((s, i, arr) => {
+                const flow = ['pending', 'countered', 'accepted', 'signed']
+                const currentIdx = flow.indexOf(offer.status)
+                const stepIdx = flow.indexOf(s)
+                const isDone = currentIdx > stepIdx
+                const isCurrent = offer.status === s
+                const isReachable = STATUS_TRANSITIONS[offer.status]?.includes(s)
+                const labels: Record<string, string> = { pending: 'Εκκρεμής', countered: 'Αντιπροσφορά', accepted: 'Αποδεκτή', signed: 'Υπογράφηκε' }
+                return (
+                  <div key={s} className="flex items-center gap-1">
+                    <button
+                      disabled={!isReachable && !isCurrent}
+                      onClick={() => isReachable ? (s === 'countered' ? setCounterOpen(true) : handleStatusChange(s)) : undefined}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                        ${isCurrent ? 'bg-blue-600 text-white shadow-sm' : isDone ? 'bg-green-100 text-green-700' : isReachable ? 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer' : 'bg-slate-50 text-slate-300 cursor-default'}`}
+                    >
+                      {isDone && <Check size={11} />}
+                      {labels[s]}
+                    </button>
+                    {i < arr.length - 1 && <span className="text-slate-200 text-xs">→</span>}
+                  </div>
+                )
+              })}
             </div>
-          )}
+            {/* Exit actions */}
+            {(offer.status === 'pending' || offer.status === 'countered' || offer.status === 'accepted') && (
+              <div className="flex gap-2 mt-3">
+                {STATUS_TRANSITIONS[offer.status]?.filter(s => s === 'rejected' || s === 'withdrawn').map(s => (
+                  <button key={s}
+                    onClick={() => handleStatusChange(s)}
+                    className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors">
+                    <XIcon size={11} />
+                    {STATUS_LABELS_BTN[s]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
