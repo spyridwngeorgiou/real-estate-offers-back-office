@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, Plus } from 'lucide-react'
+import { Building2, Plus, AlertTriangle } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { StatCard } from '../components/ui/StatCard'
 import { Badge } from '../components/ui/Badge'
@@ -26,6 +26,18 @@ export function Dashboard() {
   const pendingOffers = offers.filter(o => o.status === 'pending' || o.status === 'countered')
   const acceptedOffers = offers.filter(o => o.status === 'accepted' || o.status === 'signed')
   const recentOffers = [...offers].slice(0, 8)
+  const today = new Date()
+  const expiringSoon = offers.filter(o =>
+    (o.status === 'pending' || o.status === 'countered') &&
+    o.expires_at &&
+    new Date(o.expires_at) >= today &&
+    (new Date(o.expires_at).getTime() - today.getTime()) / 86400000 <= 3
+  )
+  const expired = offers.filter(o =>
+    (o.status === 'pending' || o.status === 'countered') &&
+    o.expires_at &&
+    new Date(o.expires_at) < today
+  )
 
   const activityIcon = (type: string) => {
     if (type.includes('offer')) return '📄'
@@ -42,6 +54,28 @@ export function Dashboard() {
         </Button>
       } />
       <div className="p-4 lg:p-6 space-y-6">
+        {/* Expiry alerts */}
+        {(expiringSoon.length > 0 || expired.length > 0) && (
+          <div className="space-y-2">
+            {expired.length > 0 && (
+              <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+                <AlertTriangle size={16} className="shrink-0" />
+                <span><strong>{expired.length}</strong> προσφορ{expired.length === 1 ? 'ά' : 'ές'} {expired.length === 1 ? 'έχει' : 'έχουν'} λήξει χωρίς απόφαση —{' '}
+                  <button className="underline font-medium" onClick={() => navigate('/offers')}>Δείτε τις</button>
+                </span>
+              </div>
+            )}
+            {expiringSoon.length > 0 && (
+              <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700">
+                <AlertTriangle size={16} className="shrink-0" />
+                <span><strong>{expiringSoon.length}</strong> προσφορ{expiringSoon.length === 1 ? 'ά λήγει' : 'ές λήγουν'} εντός 3 ημερών —{' '}
+                  <button className="underline font-medium" onClick={() => navigate('/offers')}>Δείτε τις</button>
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Ακίνητα" value={properties.length} color="blue" />
           <StatCard label="Συνολικές Προσφορές" value={offers.length} color="slate" />

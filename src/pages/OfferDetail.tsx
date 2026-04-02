@@ -11,7 +11,7 @@ import { FileUpload } from '../components/ui/FileUpload'
 import { NotesList } from '../components/shared/NotesList'
 import { useOffer, useUpdateOffer, useDeleteOffer, useCreateCounterOffer } from '../hooks/useOffers'
 import { useUIStore } from '../store/uiStore'
-import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, FINANCING_OPTIONS, transferTax } from '../lib/utils'
+import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, FINANCING_OPTIONS, transferTax } from '../lib/utils'
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -162,9 +162,17 @@ export function OfferDetail() {
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
               <h3 className="font-semibold text-slate-900 mb-3">Εμπλεκόμενα Μέρη</h3>
+              {(offer as any).category && <InfoRow label="Κατηγορία" value={OFFER_CATEGORY_LABELS[(offer as any).category] ?? (offer as any).category} />}
               <InfoRow label="Αγοραστής" value={offer.buyer?.full_name} />
               {offer.buyer?.phone && <InfoRow label="Τηλ. Αγοραστή" value={offer.buyer.phone} />}
               {offer.buyer?.email && <InfoRow label="Email Αγοραστή" value={offer.buyer.email} />}
+              {(offer as any).contractor?.full_name && (
+                <>
+                  <InfoRow label="Ανάδοχος / Τεχνίτης" value={(offer as any).contractor.full_name} />
+                  {(offer as any).contractor.phone && <InfoRow label="Τηλ. Αναδόχου" value={(offer as any).contractor.phone} />}
+                  {(offer as any).contractor.email && <InfoRow label="Email Αναδόχου" value={(offer as any).contractor.email} />}
+                </>
+              )}
               <InfoRow label="Μεσίτης Αγοραστή" value={offer.buyer_agent?.full_name} />
               <InfoRow label="Μεσίτης Πωλητή" value={offer.seller_agent?.full_name} />
               <InfoRow label="Συμβολαιογράφος" value={offer.notary?.full_name} />

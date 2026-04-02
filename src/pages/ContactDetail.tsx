@@ -39,7 +39,7 @@ export function ContactDetail() {
   if (!contact) return <div className="p-8 text-slate-400">Δεν βρέθηκε η επαφή.</div>
 
   const relatedOffers = allOffers.filter((o: any) =>
-    o.buyer_id === id || o.buyer_agent_id === id || o.seller_agent_id === id || o.notary_id === id
+    o.buyer_id === id || o.buyer_agent_id === id || o.seller_agent_id === id || o.notary_id === id || o.contractor_id === id
   )
 
   async function handleDelete() {
