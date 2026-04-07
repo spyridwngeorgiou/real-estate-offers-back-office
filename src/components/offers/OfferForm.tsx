@@ -64,24 +64,19 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
     const field = contactIdField(raw.category)
     const isEditing = !!initial?.id
     const nullIfEmpty = (v: any) => (v === '' || v === undefined || (typeof v === 'number' && isNaN(v)) ? null : v)
+    const REQUIRED = ['property_id', 'offer_price', 'offer_date', 'status']
 
-    const values: any = { ...rest }
+    const values: any = {}
+    for (const f of REQUIRED) values[f] = rest[f]
 
-    // Always resolve the contact person fields
+    // Always set contact fields
     values.buyer_id = field === 'buyer_id' ? contact_person_id || null : null
     values.contractor_id = field === 'contractor_id' ? contact_person_id || null : null
 
-    // All optional fields — always coerce empty/NaN to null
-    // When editing, skip fields the user didn't touch (preserves existing DB value)
-    const optionalFields = ['buyer_agent_id', 'seller_agent_id', 'notary_id', 'financing',
-      'special_terms', 'internal_notes', 'category', 'expires_at', 'signing_date',
-      'earnest_money', 'down_payment', 'due_diligence_days', 'offer_date']
-    for (const f of optionalFields) {
-      if (isEditing && !dirtyFields[f as keyof typeof dirtyFields]) {
-        delete values[f]
-      } else {
-        values[f] = nullIfEmpty(values[f])
-      }
+    // All other fields: coerce empty→null, skip untouched when editing
+    for (const f of Object.keys(rest).filter(k => !REQUIRED.includes(k))) {
+      if (isEditing && !dirtyFields[f as keyof typeof dirtyFields]) continue
+      values[f] = nullIfEmpty(rest[f])
     }
 
     await onSubmit(values)

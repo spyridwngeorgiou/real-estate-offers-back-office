@@ -22,15 +22,14 @@ export function PropertyForm({ initial, onSubmit, onCancel, loading, onPhotosCha
   useEffect(() => { onDirtyChange?.(isDirty) }, [isDirty])
 
   const isEditing = !!initial?.id
+  const REQUIRED = ['address', 'property_type', 'status']
   const nullIfEmpty = (v: any) => (v === '' || v === undefined || (typeof v === 'number' && isNaN(v)) ? null : v)
   function buildValues(raw: any) {
-    const optional = ['city', 'neighborhood', 'postal_code', 'list_price', 'sqm', 'plot_sqm',
-      'bedrooms', 'bathrooms', 'floor', 'year_built', 'energy_rating', 'common_expenses',
-      'listing_code', 'listing_date', 'description', 'plot_sqm']
-    const result: any = { ...raw }
-    for (const f of optional) {
-      if (isEditing && !dirtyFields[f as keyof typeof dirtyFields]) delete result[f]
-      else result[f] = nullIfEmpty(result[f])
+    const result: any = {}
+    for (const f of REQUIRED) result[f] = raw[f]
+    for (const f of Object.keys(raw).filter(k => !REQUIRED.includes(k))) {
+      if (isEditing && !dirtyFields[f as keyof typeof dirtyFields]) continue
+      result[f] = nullIfEmpty(raw[f])
     }
     return result
   }
@@ -103,8 +102,7 @@ export function PropertyForm({ initial, onSubmit, onCancel, loading, onPhotosCha
           {showAdvanced ? 'Λιγότερα πεδία' : 'Περισσότερα πεδία (δωμάτια, όροφος, ενεργειακή κλάση…)'}
         </button>
 
-        {showAdvanced && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+        <div className={`mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100 ${showAdvanced ? '' : 'hidden'}`}>
             <FormField label="ΤΚ">
               <input {...register('postal_code')} className={inputClass} placeholder="π.χ. 16675" />
             </FormField>
@@ -164,8 +162,7 @@ export function PropertyForm({ initial, onSubmit, onCancel, loading, onPhotosCha
                   placeholder="Σύντομη περιγραφή ακινήτου…" />
               </FormField>
             </div>
-          </div>
-        )}
+        </div>
       </div>
 
       <FormField label="Φωτογραφίες">
