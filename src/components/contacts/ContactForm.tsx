@@ -17,12 +17,25 @@ interface ContactFormProps {
 }
 
 export function ContactForm({ initial, onSubmit, onCancel, loading, onPhotosChange, onDirtyChange }: ContactFormProps) {
-  const { register, handleSubmit, formState: { errors, isDirty } } = useForm({ defaultValues: initial ?? {} })
+  const { register, handleSubmit, formState: { errors, isDirty, dirtyFields } } = useForm({ defaultValues: initial ?? {} })
 
   useEffect(() => { onDirtyChange?.(isDirty) }, [isDirty])
 
+  const isEditing = !!initial?.id
+  const nullIfEmpty = (v: any) => (v === '' || v === undefined ? null : v)
+  function buildValues(raw: any) {
+    if (!isEditing) return raw
+    const optional = ['company', 'email', 'phone', 'mobile', 'license_no', 'tax_id', 'address', 'notes']
+    const result: any = { ...raw }
+    for (const f of optional) {
+      if (!dirtyFields[f as keyof typeof dirtyFields]) delete result[f]
+      else result[f] = nullIfEmpty(result[f])
+    }
+    return result
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(v => onSubmit(buildValues(v)))} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
           <FormField label="Ονοματεπώνυμο" required error={errors.full_name?.message as string}>

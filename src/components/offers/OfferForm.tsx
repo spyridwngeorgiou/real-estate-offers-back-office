@@ -63,7 +63,7 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
     const { contact_person_id, ...rest } = raw
     const field = contactIdField(raw.category)
     const isEditing = !!initial?.id
-    const nullIfEmpty = (v: any) => (v === '' || v === undefined ? null : v)
+    const nullIfEmpty = (v: any) => (v === '' || v === undefined || (typeof v === 'number' && isNaN(v)) ? null : v)
 
     const values: any = { ...rest }
 
