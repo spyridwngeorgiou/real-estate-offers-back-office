@@ -225,7 +225,6 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
                 <textarea {...register('internal_notes')} className={inputClass} rows={2} />
               </FormField>
             </div>
-          </div>
         </div>
       </div>
 
