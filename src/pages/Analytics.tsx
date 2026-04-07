@@ -9,10 +9,23 @@ export function Analytics() {
   const { data: properties = [] } = useProperties()
   const { data: offers = [] } = useOffers()
 
+  const PURCHASE_CATS = ['purchase']
+  const RENTAL_CATS = ['rental']
+  const RENOVATION_CATS = ['renovation_full', 'renovation_partial', 'electrical', 'plumbing',
+    'hvac', 'structural', 'insulation', 'flooring', 'painting', 'windows', 'roofing', 'finishing', 'equipment']
+
+  const purchaseOffers = offers.filter((o: any) => PURCHASE_CATS.includes(o.category))
+  const rentalOffers = offers.filter((o: any) => RENTAL_CATS.includes(o.category))
+  const renovationOffers = offers.filter((o: any) => RENOVATION_CATS.includes(o.category))
+
   const totalListValue = properties.reduce((s, p) => s + (p.list_price ?? 0), 0)
-  const avgOfferPrice = offers.length
-    ? Math.round(offers.reduce((s: number, o: any) => s + o.offer_price, 0) / offers.length)
-    : 0
+  const avgPurchasePrice = purchaseOffers.length
+    ? Math.round(purchaseOffers.reduce((s: number, o: any) => s + o.offer_price, 0) / purchaseOffers.length)
+    : null
+  const avgRentalPrice = rentalOffers.length
+    ? Math.round(rentalOffers.reduce((s: number, o: any) => s + o.offer_price, 0) / rentalOffers.length)
+    : null
+  const totalRenovationValue = renovationOffers.reduce((s: number, o: any) => s + o.offer_price, 0)
 
   const acceptedSigned = offers.filter((o: any) => o.status === 'accepted' || o.status === 'signed').length
   const closedNegatively = offers.filter((o: any) => o.status === 'rejected' || o.status === 'withdrawn').length
@@ -71,11 +84,19 @@ export function Analytics() {
       <div className="p-4 lg:p-6 space-y-6">
         {/* KPI cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Συνολική Αξία Αγοράς" value={fmtMoney(totalListValue)} color="blue" />
-          <StatCard label="Μ.Ο. Τιμής Προσφοράς" value={fmtMoney(avgOfferPrice)} color="slate" />
+          <StatCard label="Συνολική Αξία Αγγελιών" value={fmtMoney(totalListValue)} color="blue" />
+          <StatCard label="Μ.Ο. Τιμής Αγοράς" value={avgPurchasePrice ? fmtMoney(avgPurchasePrice) : '—'} color="slate"
+            sub={purchaseOffers.length ? `${purchaseOffers.length} προσφορές αγοράς` : 'Χωρίς δεδομένα'} />
+          <StatCard label="Μ.Ο. Ενοικίου" value={avgRentalPrice ? fmtMoney(avgRentalPrice) : '—'} color="green"
+            sub={rentalOffers.length ? `${rentalOffers.length} προσφορές ενοικίασης` : 'Χωρίς δεδομένα'} />
+          <StatCard label="Αξία Ανακαινίσεων" value={renovationOffers.length ? fmtMoney(totalRenovationValue) : '—'} color="amber"
+            sub={renovationOffers.length ? `${renovationOffers.length} εργασίες` : 'Χωρίς δεδομένα'} />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-2 gap-4">
           <StatCard label="Ποσοστό Επιτυχίας" value={`${successRate}%`} color="green"
             sub={`${acceptedSigned} από ${total} κλειστές`} />
-          <StatCard label="Σύνολο Προσφορών" value={offers.length} color="amber" />
+          <StatCard label="Σύνολο Προσφορών" value={offers.length} color="slate"
+            sub={`${purchaseOffers.length} αγορά · ${rentalOffers.length} ενοικίαση · ${renovationOffers.length} εργασίες`} />
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
