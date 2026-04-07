@@ -150,6 +150,7 @@ export function Offers() {
                         </th>
                         {[
                           { col: 'property', label: 'Ακίνητο' },
+                          { col: null, label: 'Κατηγορία' },
                           { col: 'person', label: 'Επαφή' },
                           { col: 'offer_price', label: 'Τιμή' },
                           { col: null, label: 'vs Ζητούμενη' },
