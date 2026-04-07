@@ -34,7 +34,7 @@ function contactIdField(category: string) {
 export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading, onPhotosChange, onDirtyChange }: OfferFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
-  const { register, handleSubmit, control, formState: { errors, isDirty } } = useForm({
+  const { register, handleSubmit, control, formState: { errors, isDirty, dirtyFields } } = useForm({
     defaultValues: {
       ...initial,
       property_id: initial?.property_id ?? prePropertyId ?? '',
@@ -62,20 +62,26 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
   async function handleSubmitWrapped(raw: any) {
     const { contact_person_id, ...rest } = raw
     const field = contactIdField(raw.category)
-    // Coerce empty strings to null for UUID FK fields and optional text fields
+    const isEditing = !!initial?.id
     const nullIfEmpty = (v: any) => (v === '' || v === undefined ? null : v)
-    const values = {
-      ...rest,
-      buyer_id: field === 'buyer_id' ? contact_person_id || null : null,
-      contractor_id: field === 'contractor_id' ? contact_person_id || null : null,
-      buyer_agent_id: nullIfEmpty(rest.buyer_agent_id),
-      seller_agent_id: nullIfEmpty(rest.seller_agent_id),
-      notary_id: nullIfEmpty(rest.notary_id),
-      financing: nullIfEmpty(rest.financing),
-      special_terms: nullIfEmpty(rest.special_terms),
-      internal_notes: nullIfEmpty(rest.internal_notes),
-      category: nullIfEmpty(rest.category),
+
+    const values: any = { ...rest }
+
+    // Always resolve the contact person fields
+    values.buyer_id = field === 'buyer_id' ? contact_person_id || null : null
+    values.contractor_id = field === 'contractor_id' ? contact_person_id || null : null
+
+    // For optional fields: when editing, only include if the user actually changed them
+    // so we don't overwrite existing data with null
+    const optionalFields = ['buyer_agent_id', 'seller_agent_id', 'notary_id', 'financing', 'special_terms', 'internal_notes', 'category', 'expires_at', 'signing_date', 'earnest_money', 'down_payment', 'due_diligence_days']
+    for (const f of optionalFields) {
+      if (isEditing && !dirtyFields[f as keyof typeof dirtyFields]) {
+        delete values[f]
+      } else {
+        values[f] = nullIfEmpty(values[f])
+      }
     }
+
     await onSubmit(values)
   }
 

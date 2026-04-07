@@ -18,11 +18,24 @@ interface PropertyFormProps {
 
 export function PropertyForm({ initial, onSubmit, onCancel, loading, onPhotosChange, onDirtyChange }: PropertyFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const { register, handleSubmit, formState: { errors, isDirty } } = useForm({ defaultValues: initial ?? {} })
+  const { register, handleSubmit, formState: { errors, isDirty, dirtyFields } } = useForm({ defaultValues: initial ?? {} })
   useEffect(() => { onDirtyChange?.(isDirty) }, [isDirty])
 
+  const isEditing = !!initial?.id
+  function buildValues(raw: any) {
+    if (!isEditing) return raw
+    const nullIfEmpty = (v: any) => (v === '' || v === undefined ? null : v)
+    const optional = ['city', 'neighborhood', 'postal_code', 'list_price', 'sqm', 'plot_sqm', 'bedrooms', 'bathrooms', 'floor', 'year_built', 'energy_rating', 'common_expenses', 'listing_code', 'listing_date', 'description']
+    const result: any = { ...raw }
+    for (const f of optional) {
+      if (!dirtyFields[f as keyof typeof dirtyFields]) delete result[f]
+      else result[f] = nullIfEmpty(result[f])
+    }
+    return result
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form onSubmit={handleSubmit(v => onSubmit(buildValues(v)))} className="space-y-5">
       {/* Essential fields */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
