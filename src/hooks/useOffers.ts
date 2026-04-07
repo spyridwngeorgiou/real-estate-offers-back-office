@@ -33,6 +33,7 @@ export function useOffer(id: string | undefined) {
         *,
         property:properties(id, address, city, list_price, sqm),
         buyer:contacts!offers_buyer_id_fkey(id, full_name, phone, email),
+        contractor:contacts!offers_contractor_id_fkey(id, full_name, phone, email),
         buyer_agent:contacts!offers_buyer_agent_id_fkey(id, full_name, phone),
         seller_agent:contacts!offers_seller_agent_id_fkey(id, full_name, phone),
         notary:contacts!offers_notary_id_fkey(id, full_name, phone),

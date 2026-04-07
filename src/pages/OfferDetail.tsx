@@ -11,7 +11,7 @@ import { FileUpload } from '../components/ui/FileUpload'
 import { NotesList } from '../components/shared/NotesList'
 import { useOffer, useUpdateOffer, useDeleteOffer, useCreateCounterOffer } from '../hooks/useOffers'
 import { useUIStore } from '../store/uiStore'
-import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, FINANCING_OPTIONS, transferTax } from '../lib/utils'
+import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, FINANCING_OPTIONS } from '../lib/utils'
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -62,7 +62,6 @@ export function OfferDetail() {
   const financing = FINANCING_OPTIONS.find(f => f.value === offer.financing)?.label ?? offer.financing
   const counterOffers = [...(offer.counter_offers ?? [])].sort((a: any, b: any) => a.round - b.round)
   const nextRound = counterOffers.length + 1
-  const tax = transferTax(offer.offer_price)
   const availableTransitions = STATUS_TRANSITIONS[offer.status] ?? []
 
   async function handleStatusChange(status: string) {
@@ -119,10 +118,6 @@ export function OfferDetail() {
                   Διαφορά: {((offer.offer_price - offer.property.list_price) / offer.property.list_price * 100).toFixed(1)}%
                 </p>
               )}
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-slate-400">Εκτιμώμενος Φόρος Μεταβίβασης (3%)</p>
-              <p className="text-xl font-bold text-orange-600">{fmtMoney(tax)}</p>
             </div>
           </div>
 
