@@ -23,11 +23,12 @@ export function PropertyForm({ initial, onSubmit, onCancel, loading, onPhotosCha
 
   const isEditing = !!initial?.id
   const REQUIRED = ['address', 'property_type', 'status']
+  const EXCLUDE = ['id', 'created_at', 'updated_at']
   const nullIfEmpty = (v: any) => (v === '' || v === undefined || (typeof v === 'number' && isNaN(v)) ? null : v)
   function buildValues(raw: any) {
     const result: any = {}
     for (const f of REQUIRED) result[f] = raw[f]
-    for (const f of Object.keys(raw).filter(k => !REQUIRED.includes(k))) {
+    for (const f of Object.keys(raw).filter(k => !REQUIRED.includes(k) && !EXCLUDE.includes(k))) {
       if (isEditing && !dirtyFields[f as keyof typeof dirtyFields]) continue
       result[f] = nullIfEmpty(raw[f])
     }

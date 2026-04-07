@@ -64,6 +64,8 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
     const field = contactIdField(raw.category)
     const isEditing = !!initial?.id
     const nullIfEmpty = (v: any) => (v === '' || v === undefined || (typeof v === 'number' && isNaN(v)) ? null : v)
+    // Exclude joined relation objects that come from the Supabase select
+    const RELATIONS = ['property', 'buyer', 'contractor', 'buyer_agent', 'seller_agent', 'notary', 'counter_offers', 'id', 'created_at', 'updated_at']
     const REQUIRED = ['property_id', 'offer_price', 'offer_date', 'status']
 
     const values: any = {}
@@ -73,8 +75,8 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
     values.buyer_id = field === 'buyer_id' ? contact_person_id || null : null
     values.contractor_id = field === 'contractor_id' ? contact_person_id || null : null
 
-    // All other fields: coerce empty→null, skip untouched when editing
-    for (const f of Object.keys(rest).filter(k => !REQUIRED.includes(k))) {
+    // All other scalar fields: coerce empty→null, skip untouched when editing
+    for (const f of Object.keys(rest).filter(k => !REQUIRED.includes(k) && !RELATIONS.includes(k))) {
       if (isEditing && !dirtyFields[f as keyof typeof dirtyFields]) continue
       values[f] = nullIfEmpty(rest[f])
     }
