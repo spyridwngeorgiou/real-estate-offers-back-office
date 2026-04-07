@@ -25,6 +25,10 @@ const STATUS_OPTIONS = [
   { value: 'listed', label: 'Προς Πώληση' },
   { value: 'under_offer', label: 'Υπό Διαπραγμάτευση' },
   { value: 'sold', label: 'Πουλήθηκε' },
+  { value: 'for_rent', label: 'Προς Ενοικίαση' },
+  { value: 'rented', label: 'Ενοικιάστηκε' },
+  { value: 'for_renovation', label: 'Προς Ανακαίνιση' },
+  { value: 'under_renovation', label: 'Υπό Ανακαίνιση' },
   { value: 'expired', label: 'Έληξε' },
   { value: 'off_market', label: 'Εκτός Αγοράς' },
 ]

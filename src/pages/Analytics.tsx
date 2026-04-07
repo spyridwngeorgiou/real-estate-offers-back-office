@@ -29,7 +29,7 @@ export function Analytics() {
   const maxCount = Math.max(...statusBreakdown.map(s => s.count), 1)
 
   // Property status breakdown
-  const propStatusBreakdown = ['listed', 'under_offer', 'sold', 'expired', 'off_market'].map(s => ({
+  const propStatusBreakdown = ['listed', 'under_offer', 'sold', 'for_rent', 'rented', 'for_renovation', 'under_renovation', 'expired', 'off_market'].map(s => ({
     status: s,
     count: properties.filter(p => p.status === s).length,
     value: properties.filter(p => p.status === s).reduce((sum, p) => sum + (p.list_price ?? 0), 0),

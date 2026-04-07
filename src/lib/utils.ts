@@ -38,6 +38,8 @@ export const PROPERTY_TYPE_LABELS: Record<string, string> = {
 export const PROPERTY_STATUS_LABELS: Record<string, string> = {
   listed: 'Προς Πώληση', under_offer: 'Υπό Διαπραγμάτευση',
   sold: 'Πουλήθηκε', expired: 'Έληξε', off_market: 'Εκτός Αγοράς',
+  for_rent: 'Προς Ενοικίαση', rented: 'Ενοικιάστηκε',
+  for_renovation: 'Προς Ανακαίνιση', under_renovation: 'Υπό Ανακαίνιση',
 }
 
 export const OFFER_STATUS_LABELS: Record<string, string> = {

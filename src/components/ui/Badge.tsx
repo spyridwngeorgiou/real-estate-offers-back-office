@@ -1,7 +1,7 @@
 interface BadgeProps {
   label: string
   variant: 'pending' | 'countered' | 'accepted' | 'rejected' | 'withdrawn' | 'signed' |
-           'listed' | 'under_offer' | 'sold' | 'expired' | 'off_market' |
+           'listed' | 'under_offer' | 'sold' | 'expired' | 'off_market' | 'for_rent' | 'rented' | 'for_renovation' | 'under_renovation' |
            'buyer' | 'seller' | 'agent' | 'notary' | 'lawyer' | 'supplier' | 'contractor' | 'other' | 'default'
 }
 
@@ -15,8 +15,12 @@ const VARIANTS: Record<string, string> = {
   listed:       'bg-blue-100 text-blue-800',
   under_offer:  'bg-amber-100 text-amber-800',
   sold:         'bg-green-100 text-green-800',
-  expired:      'bg-slate-100 text-slate-600',
-  off_market:   'bg-slate-100 text-slate-600',
+  expired:          'bg-slate-100 text-slate-600',
+  off_market:       'bg-slate-100 text-slate-600',
+  for_rent:         'bg-teal-100 text-teal-800',
+  rented:           'bg-cyan-100 text-cyan-800',
+  for_renovation:   'bg-orange-100 text-orange-800',
+  under_renovation: 'bg-yellow-100 text-yellow-800',
   buyer:        'bg-purple-100 text-purple-800',
   seller:       'bg-orange-100 text-orange-800',
   agent:        'bg-cyan-100 text-cyan-800',

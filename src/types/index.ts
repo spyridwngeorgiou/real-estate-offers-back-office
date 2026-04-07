@@ -1,5 +1,5 @@
 export type PropertyType = 'apartment' | 'maisonette' | 'villa' | 'single_family' | 'plot' | 'commercial' | 'office' | 'other'
-export type PropertyStatus = 'listed' | 'under_offer' | 'sold' | 'expired' | 'off_market'
+export type PropertyStatus = 'listed' | 'under_offer' | 'sold' | 'expired' | 'off_market' | 'for_rent' | 'rented' | 'for_renovation' | 'under_renovation'
 export type OfferStatus = 'pending' | 'countered' | 'accepted' | 'rejected' | 'withdrawn' | 'signed'
 export type ContactType = 'buyer' | 'seller' | 'agent' | 'notary' | 'lawyer' | 'supplier' | 'contractor' | 'other'
 export type FinancingType = 'cash' | 'mortgage' | 'pre_approved' | 'other'

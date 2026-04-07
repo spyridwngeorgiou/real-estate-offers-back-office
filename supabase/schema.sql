@@ -15,7 +15,8 @@ CREATE TYPE property_type_enum AS ENUM (
 );
 
 CREATE TYPE property_status_enum AS ENUM (
-  'listed', 'under_offer', 'sold', 'expired', 'off_market'
+  'listed', 'under_offer', 'sold', 'expired', 'off_market',
+  'for_rent', 'rented', 'for_renovation', 'under_renovation'
 );
 
 CREATE TYPE offer_status_enum AS ENUM (

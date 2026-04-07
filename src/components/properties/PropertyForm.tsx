@@ -58,6 +58,10 @@ export function PropertyForm({ initial, onSubmit, onCancel, loading, onPhotosCha
             <option value="listed">Προς Πώληση</option>
             <option value="under_offer">Υπό Διαπραγμάτευση</option>
             <option value="sold">Πουλήθηκε</option>
+            <option value="for_rent">Προς Ενοικίαση</option>
+            <option value="rented">Ενοικιάστηκε</option>
+            <option value="for_renovation">Προς Ανακαίνιση</option>
+            <option value="under_renovation">Υπό Ανακαίνιση</option>
             <option value="expired">Έληξε</option>
             <option value="off_market">Εκτός Αγοράς</option>
           </select>
