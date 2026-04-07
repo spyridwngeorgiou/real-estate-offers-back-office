@@ -62,10 +62,19 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
   async function handleSubmitWrapped(raw: any) {
     const { contact_person_id, ...rest } = raw
     const field = contactIdField(raw.category)
+    // Coerce empty strings to null for UUID FK fields and optional text fields
+    const nullIfEmpty = (v: any) => (v === '' || v === undefined ? null : v)
     const values = {
       ...rest,
       buyer_id: field === 'buyer_id' ? contact_person_id || null : null,
       contractor_id: field === 'contractor_id' ? contact_person_id || null : null,
+      buyer_agent_id: nullIfEmpty(rest.buyer_agent_id),
+      seller_agent_id: nullIfEmpty(rest.seller_agent_id),
+      notary_id: nullIfEmpty(rest.notary_id),
+      financing: nullIfEmpty(rest.financing),
+      special_terms: nullIfEmpty(rest.special_terms),
+      internal_notes: nullIfEmpty(rest.internal_notes),
+      category: nullIfEmpty(rest.category),
     }
     await onSubmit(values)
   }
@@ -155,8 +164,7 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
           {showAdvanced ? 'Λιγότερα πεδία' : 'Περισσότερα πεδία (ημερομηνίες, χρηματοδότηση, όροι…)'}
         </button>
 
-        {showAdvanced && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+        <div className={`mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100 ${showAdvanced ? '' : 'hidden'}`}>
             <FormField label="Λήξη Προσφοράς" hint="Μέχρι πότε ισχύει">
               <input {...register('expires_at')} type="date" className={inputClass} />
             </FormField>
@@ -213,7 +221,7 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
               </FormField>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       <FormField label="Συνημμένα / Φωτογραφίες">
