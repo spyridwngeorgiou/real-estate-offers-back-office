@@ -15,8 +15,8 @@ import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, FINANCIN
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex justify-between py-2 border-b border-slate-100 last:border-0">
-      <span className="text-sm text-slate-500">{label}</span>
+    <div className="flex justify-between gap-4 py-2 border-b border-slate-100 last:border-0">
+      <span className="text-sm text-slate-500 shrink-0">{label}</span>
       <span className="text-sm font-medium text-slate-900 text-right">{value ?? '—'}</span>
     </div>
   )
