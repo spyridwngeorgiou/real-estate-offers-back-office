@@ -22,13 +22,14 @@ export function PropertyForm({ initial, onSubmit, onCancel, loading, onPhotosCha
   useEffect(() => { onDirtyChange?.(isDirty) }, [isDirty])
 
   const isEditing = !!initial?.id
+  const nullIfEmpty = (v: any) => (v === '' || v === undefined || (typeof v === 'number' && isNaN(v)) ? null : v)
   function buildValues(raw: any) {
-    if (!isEditing) return raw
-    const nullIfEmpty = (v: any) => (v === '' || v === undefined || (typeof v === 'number' && isNaN(v)) ? null : v)
-    const optional = ['city', 'neighborhood', 'postal_code', 'list_price', 'sqm', 'plot_sqm', 'bedrooms', 'bathrooms', 'floor', 'year_built', 'energy_rating', 'common_expenses', 'listing_code', 'listing_date', 'description']
+    const optional = ['city', 'neighborhood', 'postal_code', 'list_price', 'sqm', 'plot_sqm',
+      'bedrooms', 'bathrooms', 'floor', 'year_built', 'energy_rating', 'common_expenses',
+      'listing_code', 'listing_date', 'description', 'plot_sqm']
     const result: any = { ...raw }
     for (const f of optional) {
-      if (!dirtyFields[f as keyof typeof dirtyFields]) delete result[f]
+      if (isEditing && !dirtyFields[f as keyof typeof dirtyFields]) delete result[f]
       else result[f] = nullIfEmpty(result[f])
     }
     return result

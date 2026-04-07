@@ -71,9 +71,11 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
     values.buyer_id = field === 'buyer_id' ? contact_person_id || null : null
     values.contractor_id = field === 'contractor_id' ? contact_person_id || null : null
 
-    // For optional fields: when editing, only include if the user actually changed them
-    // so we don't overwrite existing data with null
-    const optionalFields = ['buyer_agent_id', 'seller_agent_id', 'notary_id', 'financing', 'special_terms', 'internal_notes', 'category', 'expires_at', 'signing_date', 'earnest_money', 'down_payment', 'due_diligence_days']
+    // All optional fields — always coerce empty/NaN to null
+    // When editing, skip fields the user didn't touch (preserves existing DB value)
+    const optionalFields = ['buyer_agent_id', 'seller_agent_id', 'notary_id', 'financing',
+      'special_terms', 'internal_notes', 'category', 'expires_at', 'signing_date',
+      'earnest_money', 'down_payment', 'due_diligence_days', 'offer_date']
     for (const f of optionalFields) {
       if (isEditing && !dirtyFields[f as keyof typeof dirtyFields]) {
         delete values[f]

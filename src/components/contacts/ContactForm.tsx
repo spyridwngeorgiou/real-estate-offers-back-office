@@ -24,11 +24,10 @@ export function ContactForm({ initial, onSubmit, onCancel, loading, onPhotosChan
   const isEditing = !!initial?.id
   const nullIfEmpty = (v: any) => (v === '' || v === undefined ? null : v)
   function buildValues(raw: any) {
-    if (!isEditing) return raw
     const optional = ['company', 'email', 'phone', 'mobile', 'license_no', 'tax_id', 'address', 'notes']
     const result: any = { ...raw }
     for (const f of optional) {
-      if (!dirtyFields[f as keyof typeof dirtyFields]) delete result[f]
+      if (isEditing && !dirtyFields[f as keyof typeof dirtyFields]) delete result[f]
       else result[f] = nullIfEmpty(result[f])
     }
     return result
