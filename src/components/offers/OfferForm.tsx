@@ -19,7 +19,9 @@ interface OfferFormProps {
   onDirtyChange?: (dirty: boolean) => void
 }
 
-const WORK_CATEGORIES = ['electrical', 'plumbing', 'hvac', 'structural', 'finishing', 'equipment']
+const WORK_CATEGORIES = ['electrical', 'plumbing', 'hvac', 'structural', 'insulation',
+  'flooring', 'painting', 'windows', 'roofing', 'finishing', 'equipment',
+  'renovation_full', 'renovation_partial']
 
 function contactFieldLabel(category: string) {
   if (category === 'purchase') return 'Αγοραστής'
@@ -49,7 +51,7 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
 
   const category = useWatch({ control, name: 'category' })
   const selectedPropertyId = useWatch({ control, name: 'property_id' })
-  const isPurchase = !category || category === 'purchase'
+  const isPurchase = !category || category === 'purchase' || category === 'rental'
 
   const { data: properties = [] } = useProperties()
   const { data: allContacts = [] } = useContacts()

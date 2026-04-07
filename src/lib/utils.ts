@@ -54,13 +54,27 @@ export const CONTACT_TYPE_LABELS: Record<string, string> = {
 }
 
 export const OFFER_CATEGORY_LABELS: Record<string, string> = {
+  // Αγοραπωλησία
+  purchase: 'Αγορά Ακινήτου',
+  // Ενοικίαση
+  rental: 'Ενοικίαση Ακινήτου',
+  // Ανακαίνιση — γενικά
+  renovation_full: 'Ολική Ανακαίνιση',
+  renovation_partial: 'Μερική Ανακαίνιση',
+  // Ανακαίνιση — ειδικότητες
   electrical: 'Ηλεκτρολογικά',
   plumbing: 'Υδραυλικά',
   hvac: 'Κλιματισμός / HVAC',
-  structural: 'Δομικά',
-  finishing: 'Φινίρισμα',
+  structural: 'Δομικά / Κατασκευαστικά',
+  insulation: 'Θερμομόνωση / Μόνωση',
+  flooring: 'Δάπεδα / Πλακάκια',
+  painting: 'Βαψίματα / Χρωματισμός',
+  windows: 'Κουφώματα / Παράθυρα',
+  roofing: 'Στέγη / Στέγαση',
+  finishing: 'Φινίρισμα / Αποπεράτωση',
+  // Λοιπά
   equipment: 'Εξοπλισμός',
-  purchase: 'Αγορά Ακινήτου',
+  legal: 'Νομικές / Συμβολαιογραφικές',
   other: 'Άλλο',
 }
 
