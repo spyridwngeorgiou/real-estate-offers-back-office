@@ -44,6 +44,8 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
       status: initial?.status ?? 'pending',
       category: (initial as any)?.category ?? '',
       contact_person_id: (initial as any)?.buyer_id ?? (initial as any)?.contractor_id ?? '',
+      vat_rate: initial?.vat_rate ?? null,
+      vat_included: initial?.vat_included ?? false,
     }
   })
 
@@ -51,7 +53,11 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
 
   const category = useWatch({ control, name: 'category' })
   const selectedPropertyId = useWatch({ control, name: 'property_id' })
+  const offerPrice = useWatch({ control, name: 'offer_price' })
+  const vatRate = useWatch({ control, name: 'vat_rate' })
+  const vatIncluded = useWatch({ control, name: 'vat_included' })
   const isPurchase = !category || category === 'purchase' || category === 'rental'
+  const isWork = WORK_CATEGORIES.includes(category)
 
   const { data: properties = [] } = useProperties()
   const { data: allContacts = [] } = useContacts()
@@ -144,6 +150,32 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
         <FormField label="Ημερομηνία Προσφοράς" required>
           <input {...register('offer_date', { required: true })} type="date" className={inputClass} />
         </FormField>
+
+        {/* VAT fields — shown for work/renovation categories */}
+        <div className={`sm:col-span-2 ${isWork ? '' : 'hidden'}`}>
+          <div className="flex flex-wrap items-end gap-4 bg-amber-50 border border-amber-100 rounded-lg px-4 py-3">
+            <FormField label="Συντελεστής ΦΠΑ (%)" hint="Αφήστε κενό αν δεν ισχύει ΦΠΑ">
+              <input
+                {...register('vat_rate', { valueAsNumber: true })}
+                type="number" min="0" max="100" step="1"
+                className={inputClass + ' w-28'}
+                placeholder="24"
+              />
+            </FormField>
+            <div className="flex items-center gap-2 pb-1">
+              <input {...register('vat_included')} type="checkbox" id="vat_included" className="rounded border-slate-300 w-4 h-4" />
+              <label htmlFor="vat_included" className="text-sm text-slate-700 select-none cursor-pointer">Η τιμή περιλαμβάνει ήδη ΦΠΑ</label>
+            </div>
+            {vatRate && !isNaN(Number(vatRate)) && Number(vatRate) > 0 && offerPrice > 0 && (
+              <div className="text-sm font-semibold text-amber-800">
+                {vatIncluded
+                  ? <>Καθαρή αξία: <span className="text-amber-900">{fmtMoney(Math.round(offerPrice / (1 + Number(vatRate) / 100)))}</span></>
+                  : <>Τελική με ΦΠΑ: <span className="text-amber-900">{fmtMoney(Math.round(offerPrice * (1 + Number(vatRate) / 100)))}</span></>
+                }
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="sm:col-span-2">
           <FormField label={contactFieldLabel(category)}>

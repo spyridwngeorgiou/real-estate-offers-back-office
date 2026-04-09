@@ -17,7 +17,7 @@ export async function uploadFile(
   formData.append('folder', `re-greece/${entityType}/${entityId}`)
 
   const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`,
     { method: 'POST', body: formData },
   )
 

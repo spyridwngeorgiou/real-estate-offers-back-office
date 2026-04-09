@@ -64,6 +64,8 @@ export interface Offer {
   expires_at: string | null
   signing_date: string | null
   due_diligence_days: number | null
+  vat_rate: number | null
+  vat_included: boolean
   special_terms: string | null
   internal_notes: string | null
   created_at: string

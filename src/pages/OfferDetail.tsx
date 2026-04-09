@@ -171,6 +171,17 @@ export function OfferDetail() {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
               <h3 className="font-semibold text-slate-900 mb-3">Οικονομικά Στοιχεία</h3>
               <InfoRow label="Τιμή Προσφοράς" value={fmtMoney(offer.offer_price)} />
+              {offer.vat_rate != null && offer.vat_rate > 0 && (
+                <>
+                  <InfoRow label="ΦΠΑ" value={`${offer.vat_rate}% ${offer.vat_included ? '(περιλαμβάνεται)' : ''}`} />
+                  {offer.vat_included
+                    ? <InfoRow label="Καθαρή Αξία" value={fmtMoney(Math.round(offer.offer_price / (1 + offer.vat_rate / 100)))} />
+                    : <InfoRow label="Τελική Τιμή με ΦΠΑ" value={
+                        <span className="text-amber-700 font-bold">{fmtMoney(Math.round(offer.offer_price * (1 + offer.vat_rate / 100)))}</span>
+                      } />
+                  }
+                </>
+              )}
               <InfoRow label="Αρραβώνας" value={fmtMoney(offer.earnest_money)} />
               <InfoRow label="Ίδια Κεφάλαια" value={fmtMoney(offer.down_payment)} />
               <InfoRow label="Χρηματοδότηση" value={financing} />
