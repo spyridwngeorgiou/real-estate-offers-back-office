@@ -1,25 +1,20 @@
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string
 
-function resourceType(file: File): 'image' | 'video' | 'raw' {
-  if (file.type.startsWith('image/')) return 'image'
-  if (file.type.startsWith('video/')) return 'video'
-  return 'raw'
-}
-
 export async function uploadFile(
   entityType: string,
   entityId: string,
   file: File,
   _label: string,
 ): Promise<{ bucket_path: string; public_url: string }> {
-  const type = resourceType(file)
+  const isImage = file.type.startsWith('image/')
+  const isVideo = file.type.startsWith('video/')
+  const type = isImage ? 'image' : isVideo ? 'video' : 'raw'
+
   const formData = new FormData()
   formData.append('file', file)
   formData.append('upload_preset', UPLOAD_PRESET)
   formData.append('folder', `re-greece/${entityType}/${entityId}`)
-  // Explicitly mark asset as anonymous/public so it's accessible without signing
-  formData.append('access_control', JSON.stringify([{ access_type: 'anonymous' }]))
 
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${type}/upload`,
