@@ -123,7 +123,7 @@ export function PropertyDetail() {
                 : <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead><tr className="border-b border-slate-100 bg-slate-50">
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Αγοραστής</th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Επαφή</th>
                         <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Τιμή</th>
                         <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Κατάσταση</th>
                         <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ημ/νία</th>
@@ -132,7 +132,7 @@ export function PropertyDetail() {
                       <tbody>
                         {offers.map((o: any) => (
                           <tr key={o.id} className="border-b border-slate-50 hover:bg-slate-50">
-                            <td className="px-5 py-3 font-medium">{o.buyer?.full_name ?? '—'}</td>
+                            <td className="px-5 py-3 font-medium">{o.buyer?.full_name ?? o.contractor?.full_name ?? '—'}</td>
                             <td className="px-5 py-3 font-bold">{fmtMoney(o.offer_price)}</td>
                             <td className="px-5 py-3"><Badge label={OFFER_STATUS_LABELS[o.status] ?? o.status} variant={o.status} /></td>
                             <td className="px-5 py-3 text-slate-400">{fmtDate(o.offer_date)}</td>
