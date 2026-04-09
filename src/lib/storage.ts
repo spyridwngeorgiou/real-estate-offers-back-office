@@ -1,36 +1,29 @@
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string
-
-function resourceType(file: File): 'image' | 'video' | 'raw' {
-  if (file.type.startsWith('image/')) return 'image'
-  if (file.type.startsWith('video/')) return 'video'
-  return 'raw'
-}
+const PUBLIC_KEY = import.meta.env.VITE_UPLOADCARE_PUBLIC_KEY as string
 
 export async function uploadFile(
-  entityType: string,
-  entityId: string,
+  _entityType: string,
+  _entityId: string,
   file: File,
   _label: string,
 ): Promise<{ bucket_path: string; public_url: string }> {
-  const type = resourceType(file)
   const formData = new FormData()
+  formData.append('UPLOADCARE_PUB_KEY', PUBLIC_KEY)
+  formData.append('UPLOADCARE_STORE', '1')
   formData.append('file', file)
-  formData.append('upload_preset', UPLOAD_PRESET)
-  formData.append('folder', `re-greece/${entityType}/${entityId}`)
 
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${type}/upload`,
-    { method: 'POST', body: formData },
-  )
+  const res = await fetch('https://upload.uploadcare.com/base/', {
+    method: 'POST',
+    body: formData,
+  })
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message ?? 'Upload failed')
+    throw new Error(err?.detail ?? 'Upload failed')
   }
 
   const data = await res.json()
-  return { bucket_path: data.secure_url, public_url: data.secure_url }
+  const url = `https://ucarecdn.com/${data.file}/`
+  return { bucket_path: url, public_url: url }
 }
 
 export function getPublicUrl(bucket_path: string): string {
@@ -38,5 +31,5 @@ export function getPublicUrl(bucket_path: string): string {
 }
 
 export async function deleteFile(_bucket_path: string): Promise<void> {
-  // Signed deletion requires API secret — manage via Cloudinary dashboard
+  // Deletion requires secret key — manage via Uploadcare dashboard
 }
