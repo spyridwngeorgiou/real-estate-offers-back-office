@@ -166,11 +166,11 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
               <input {...register('vat_included')} type="checkbox" id="vat_included" className="rounded border-slate-300 w-4 h-4" />
               <label htmlFor="vat_included" className="text-sm text-slate-700 select-none cursor-pointer">Η τιμή περιλαμβάνει ήδη ΦΠΑ</label>
             </div>
-            {vatRate && !isNaN(Number(vatRate)) && Number(vatRate) > 0 && offerPrice > 0 && (
+            {vatRate && !isNaN(Number(vatRate)) && Number(vatRate) > 0 && offerPrice != null && offerPrice > 0 && (
               <div className="text-sm font-semibold text-amber-800">
                 {vatIncluded
-                  ? <>Καθαρή αξία: <span className="text-amber-900">{fmtMoney(Math.round(offerPrice / (1 + Number(vatRate) / 100)))}</span></>
-                  : <>Τελική με ΦΠΑ: <span className="text-amber-900">{fmtMoney(Math.round(offerPrice * (1 + Number(vatRate) / 100)))}</span></>
+                  ? <>Καθαρή αξία: <span className="text-amber-900">{fmtMoney(Math.round((offerPrice as number) / (1 + Number(vatRate) / 100)))}</span></>
+                  : <>Τελική με ΦΠΑ: <span className="text-amber-900">{fmtMoney(Math.round((offerPrice as number) * (1 + Number(vatRate) / 100)))}</span></>
                 }
               </div>
             )}
