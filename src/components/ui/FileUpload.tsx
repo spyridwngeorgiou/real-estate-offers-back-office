@@ -64,8 +64,8 @@ export function FileUpload({ entityType, entityId }: FileUploadProps) {
           : <Upload size={22} className="mx-auto text-slate-400 mb-2" />
         }
         <p className="text-sm text-slate-500">{uploadMutation.isPending ? 'Μεταφόρτωση…' : 'Σύρετε ή κάντε κλικ για ανέβασμα'}</p>
-        <p className="text-xs text-slate-400 mt-0.5">PDF, JPG, PNG, DOCX</p>
-        <input ref={inputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+        <p className="text-xs text-slate-400 mt-0.5">PDF, εικόνες, έγγραφα και άλλα (έως 100MB)</p>
+        <input ref={inputRef} type="file" multiple
           className="hidden" onChange={e => handleFiles(e.target.files)} />
       </div>
 

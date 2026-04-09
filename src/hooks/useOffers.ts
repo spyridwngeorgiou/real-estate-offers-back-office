@@ -11,6 +11,7 @@ export function useOffers(filters?: { status?: string; property_id?: string; sea
         *,
         property:properties(id, address, city, list_price),
         buyer:contacts!offers_buyer_id_fkey(id, full_name),
+        contractor:contacts!offers_contractor_id_fkey(id, full_name),
         buyer_agent:contacts!offers_buyer_agent_id_fkey(id, full_name),
         seller_agent:contacts!offers_seller_agent_id_fkey(id, full_name),
         notary:contacts!offers_notary_id_fkey(id, full_name)
