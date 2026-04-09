@@ -1,7 +1,3 @@
-// File storage via Cloudinary — 25GB free, no per-file size limits
-// Uses unsigned uploads (no secret exposed). Files are public URLs.
-// Deletion removes the record from DB; to purge from Cloudinary use their dashboard.
-
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string
 
@@ -16,6 +12,8 @@ export async function uploadFile(
   formData.append('upload_preset', UPLOAD_PRESET)
   formData.append('folder', `re-greece/${entityType}/${entityId}`)
 
+  // Use auto/upload so Cloudinary handles images, PDFs, docs, etc.
+  // Requires the upload preset to have resource_type = "auto" in Cloudinary dashboard.
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`,
     { method: 'POST', body: formData },
@@ -23,20 +21,18 @@ export async function uploadFile(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message ?? 'Cloudinary upload failed')
+    throw new Error(err?.error?.message ?? 'Upload failed')
   }
 
   const data = await res.json()
-  // Store the full secure URL as bucket_path — getPublicUrl returns it as-is
   return { bucket_path: data.secure_url, public_url: data.secure_url }
 }
 
-// bucket_path IS the Cloudinary secure URL — just return it
+// bucket_path is the full Cloudinary secure URL
 export function getPublicUrl(bucket_path: string): string {
   return bucket_path
 }
 
-// Removes record from DB. File stays on Cloudinary (manage via dashboard).
 export async function deleteFile(_bucket_path: string): Promise<void> {
-  // No-op: signed deletion requires API secret (not safe in frontend)
+  // Signed deletion requires API secret — manage via Cloudinary dashboard
 }
