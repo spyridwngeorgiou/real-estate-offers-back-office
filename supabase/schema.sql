@@ -174,6 +174,86 @@ CREATE TABLE IF NOT EXISTS activities (
 CREATE INDEX IF NOT EXISTS idx_activities_created ON activities(created_at DESC);
 
 -- -----------------------------------------------
+-- TASKS
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS tasks (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity_type text NOT NULL,
+  entity_id   uuid NOT NULL,
+  title       text NOT NULL,
+  due_date    date,
+  status      text NOT NULL DEFAULT 'open',
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tasks_entity ON tasks(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+
+-- -----------------------------------------------
+-- VIEWINGS
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS viewings (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id uuid NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  contact_id  uuid NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+  viewed_at   timestamptz NOT NULL,
+  notes       text,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_viewings_property ON viewings(property_id);
+CREATE INDEX IF NOT EXISTS idx_viewings_contact ON viewings(contact_id);
+
+-- -----------------------------------------------
+-- COMMISSIONS
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS commissions (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  offer_id          uuid NOT NULL REFERENCES offers(id) ON DELETE CASCADE,
+  agent_contact_id  uuid REFERENCES contacts(id) ON DELETE SET NULL,
+  rate              numeric(5,2),
+  amount            integer,
+  invoiced          boolean NOT NULL DEFAULT false,
+  received          boolean NOT NULL DEFAULT false,
+  notes             text,
+  created_at        timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_commissions_offer ON commissions(offer_id);
+CREATE INDEX IF NOT EXISTS idx_commissions_agent ON commissions(agent_contact_id);
+
+-- -----------------------------------------------
+-- EMAIL TEMPLATES
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS email_templates (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       text NOT NULL,
+  subject    text,
+  body       text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_templates_name ON email_templates(name);
+
+-- -----------------------------------------------
+-- OFFER TEMPLATES
+-- -----------------------------------------------
+CREATE TABLE IF NOT EXISTS offer_templates (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name          text NOT NULL,
+  category      text,
+  status        text,
+  offer_price   integer,
+  vat_rate      numeric(5,2),
+  vat_included  boolean NOT NULL DEFAULT false,
+  payment_terms text,
+  notes         text,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_offer_templates_name ON offer_templates(name);
+
+-- -----------------------------------------------
 -- UPDATED_AT TRIGGER
 -- -----------------------------------------------
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -203,22 +283,32 @@ CREATE TRIGGER trg_notes_updated_at
 -- -----------------------------------------------
 -- ROW LEVEL SECURITY (open for anon - single-user app)
 -- -----------------------------------------------
-ALTER TABLE properties    ENABLE ROW LEVEL SECURITY;
-ALTER TABLE contacts      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE offers        ENABLE ROW LEVEL SECURITY;
-ALTER TABLE counter_offers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notes         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE files         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activities    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE properties      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contacts        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE offers          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE counter_offers  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notes           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE files           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activities      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tasks           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE viewings        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE commissions     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE offer_templates ENABLE ROW LEVEL SECURITY;
 
 -- Allow all operations for anon key (back-office, single-user)
-CREATE POLICY "anon_all_properties"     ON properties     FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "anon_all_contacts"       ON contacts       FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "anon_all_offers"         ON offers         FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "anon_all_counter_offers" ON counter_offers FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "anon_all_notes"          ON notes          FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "anon_all_files"          ON files          FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "anon_all_activities"     ON activities     FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_properties"      ON properties      FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_contacts"        ON contacts        FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_offers"          ON offers          FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_counter_offers"  ON counter_offers  FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_notes"           ON notes           FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_files"           ON files           FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_activities"      ON activities      FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_tasks"           ON tasks           FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_viewings"        ON viewings        FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_commissions"     ON commissions     FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_email_templates" ON email_templates FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_all_offer_templates" ON offer_templates FOR ALL TO anon USING (true) WITH CHECK (true);
 
 -- -----------------------------------------------
 -- STORAGE BUCKET (run in Supabase dashboard or via API)

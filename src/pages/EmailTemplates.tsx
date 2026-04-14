@@ -64,22 +64,32 @@ export function EmailTemplates() {
   const [preview, setPreview] = useState<EmailTemplate | null>(null)
 
   async function handleSubmit(values: TemplateFormValues) {
-    if (editing) {
-      await updateTemplate.mutateAsync({ id: editing.id, values })
-      addToast('Πρότυπο ενημερώθηκε', 'success')
-    } else {
-      await createTemplate.mutateAsync({ name: values.name, subject: values.subject || null, body: values.body })
-      addToast('Πρότυπο δημιουργήθηκε', 'success')
+    try {
+      if (editing) {
+        await updateTemplate.mutateAsync({ id: editing.id, values })
+        addToast('Πρότυπο ενημερώθηκε', 'success')
+      } else {
+        await createTemplate.mutateAsync({ name: values.name, subject: values.subject || null, body: values.body })
+        addToast('Πρότυπο δημιουργήθηκε', 'success')
+      }
+      setModalOpen(false)
+      setEditing(null)
+    } catch (err: any) {
+      console.error('Error saving template:', err)
+      addToast(err.message || 'Σφάλμα κατά την αποθήκευση', 'error')
     }
-    setModalOpen(false)
-    setEditing(null)
   }
 
   async function handleDelete() {
     if (!deleteTarget) return
-    await deleteTemplate.mutateAsync(deleteTarget.id)
-    addToast('Πρότυπο διαγράφηκε', 'info')
-    setDeleteTarget(null)
+    try {
+      await deleteTemplate.mutateAsync(deleteTarget.id)
+      addToast('Πρότυπο διαγράφηκε', 'info')
+      setDeleteTarget(null)
+    } catch (err: any) {
+      console.error('Error deleting template:', err)
+      addToast(err.message || 'Σφάλμα κατά τη διαγραφή', 'error')
+    }
   }
 
   function handleUse(t: EmailTemplate) {

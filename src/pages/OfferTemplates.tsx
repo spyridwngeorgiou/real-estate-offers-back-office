@@ -90,32 +90,42 @@ export function OfferTemplates() {
   const [deleteTarget, setDeleteTarget] = useState<OfferTemplate | null>(null)
 
   async function handleSubmit(values: TemplateFormValues) {
-    const payload = {
-      name: values.name,
-      category: values.category || null,
-      offer_price: values.offer_price ? parseFloat(values.offer_price) : null,
-      vat_rate: values.vat_rate ? parseFloat(values.vat_rate) : null,
-      vat_included: values.vat_included,
-      payment_terms: values.payment_terms || null,
-      notes: values.notes || null,
-      status: null,
+    try {
+      const payload = {
+        name: values.name,
+        category: values.category || null,
+        offer_price: values.offer_price && values.offer_price.trim() ? parseInt(values.offer_price, 10) : null,
+        vat_rate: values.vat_rate && values.vat_rate.trim() ? parseFloat(values.vat_rate) : null,
+        vat_included: values.vat_included,
+        payment_terms: values.payment_terms || null,
+        notes: values.notes || null,
+        status: null,
+      }
+      if (editing) {
+        await updateTemplate.mutateAsync({ id: editing.id, values: payload })
+        addToast('Πρότυπο ενημερώθηκε', 'success')
+      } else {
+        await createTemplate.mutateAsync(payload)
+        addToast('Πρότυπο δημιουργήθηκε', 'success')
+      }
+      setModalOpen(false)
+      setEditing(null)
+    } catch (err: any) {
+      console.error('Error saving template:', err)
+      addToast(err.message || 'Σφάλμα κατά την αποθήκευση', 'error')
     }
-    if (editing) {
-      await updateTemplate.mutateAsync({ id: editing.id, values: payload })
-      addToast('Πρότυπο ενημερώθηκε', 'success')
-    } else {
-      await createTemplate.mutateAsync(payload)
-      addToast('Πρότυπο δημιουργήθηκε', 'success')
-    }
-    setModalOpen(false)
-    setEditing(null)
   }
 
   async function handleDelete() {
     if (!deleteTarget) return
-    await deleteTemplate.mutateAsync(deleteTarget.id)
-    addToast('Πρότυπο διαγράφηκε', 'info')
-    setDeleteTarget(null)
+    try {
+      await deleteTemplate.mutateAsync(deleteTarget.id)
+      addToast('Πρότυπο διαγράφηκε', 'info')
+      setDeleteTarget(null)
+    } catch (err: any) {
+      console.error('Error deleting template:', err)
+      addToast(err.message || 'Σφάλμα κατά τη διαγραφή', 'error')
+    }
   }
 
   return (
