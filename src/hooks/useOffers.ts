@@ -14,7 +14,8 @@ export function useOffers(filters?: { status?: string; property_id?: string; sea
         contractor:contacts!offers_contractor_id_fkey(id, full_name),
         buyer_agent:contacts!offers_buyer_agent_id_fkey(id, full_name),
         seller_agent:contacts!offers_seller_agent_id_fkey(id, full_name),
-        notary:contacts!offers_notary_id_fkey(id, full_name)
+        notary:contacts!offers_notary_id_fkey(id, full_name),
+        files:files!files_entity_id_fkey(id, file_name, bucket_path)
       `).order('created_at', { ascending: false })
       if (filters?.status) q = q.eq('status', filters.status)
       if (filters?.property_id) q = q.eq('property_id', filters.property_id)

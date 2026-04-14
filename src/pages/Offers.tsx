@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, FileText, GitCompare, ArrowUp, ArrowDown, Download } from 'lucide-react'
+import { Plus, Search, FileText, GitCompare, ArrowUp, ArrowDown, Download, Paperclip } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -153,7 +153,7 @@ export function Offers() {
                           { col: null, label: 'Κατηγορία' },
                           { col: 'person', label: 'Επαφή' },
                           { col: 'offer_price', label: 'Τιμή' },
-                          { col: null, label: 'vs Ζητούμενη' },
+                          { col: null, label: 'Συνημμένα' },
                           { col: 'status', label: 'Κατάσταση' },
                           { col: 'offer_date', label: 'Ημερομηνία' },
                           { col: 'expires_at', label: 'Λήξη' },
@@ -207,13 +207,18 @@ export function Offers() {
                               {o.buyer?.full_name ?? o.contractor?.full_name ?? '—'}
                             </td>
                             <td className="px-5 py-3 font-bold text-slate-900 dark:text-white" onClick={() => navigate(`/offers/${o.id}`)}>{fmtMoney(o.offer_price)}</td>
-                            <td className="px-5 py-3" onClick={() => navigate(`/offers/${o.id}`)}>
-                              {diff !== null
-                                ? <span className={`text-xs font-medium ${diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {diff >= 0 ? '+' : ''}{diff.toFixed(1)}%
-                                  </span>
-                                : <span className="text-slate-400">—</span>
-                              }
+                            <td className="px-5 py-3" onClick={(e) => {
+                              e.stopPropagation()
+                              if (o.files && o.files.length > 0) navigate(`/offers/${o.id}`)
+                            }}>
+                              {o.files && o.files.length > 0 ? (
+                                <button className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm transition-colors">
+                                  <Paperclip size={14} />
+                                  <span>{o.files.length}</span>
+                                </button>
+                              ) : (
+                                <span className="text-slate-400 dark:text-slate-500 text-xs">—</span>
+                              )}
                             </td>
                             <td className="px-5 py-3" onClick={() => navigate(`/offers/${o.id}`)}>
                               <Badge label={OFFER_STATUS_LABELS[o.status] ?? o.status} variant={o.status} />
