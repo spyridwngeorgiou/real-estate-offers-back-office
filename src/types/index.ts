@@ -152,6 +152,7 @@ export interface EmailTemplate {
   name: string
   subject: string | null
   body: string
+  category: string | null
   created_at: string
 }
 

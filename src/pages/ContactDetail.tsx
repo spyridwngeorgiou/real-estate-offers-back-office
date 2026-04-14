@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Edit, Trash2, Mail, Phone } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, Mail, Phone, Send } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -9,6 +9,8 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { ContactForm } from '../components/contacts/ContactForm'
 import { NotesList } from '../components/shared/NotesList'
 import { TaskList } from '../components/shared/TaskList'
+import { EmailSendModal } from '../components/shared/EmailSendModal'
+import { contactVars } from '../lib/templateUtils'
 import { FileUpload } from '../components/ui/FileUpload'
 import { useContact, useUpdateContact, useDeleteContact } from '../hooks/useContacts'
 import { useOffers } from '../hooks/useOffers'
@@ -30,6 +32,7 @@ export function ContactDetail() {
   const addToast = useUIStore(s => s.addToast)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [emailOpen, setEmailOpen] = useState(false)
 
   const { data: contact, isLoading } = useContact(id)
   const { data: allOffers = [] } = useOffers()
@@ -54,6 +57,7 @@ export function ContactDetail() {
       <Topbar title={contact.full_name} actions={
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={() => navigate('/contacts')}><ArrowLeft size={15} /></Button>
+          {contact.email && <Button variant="secondary" size="sm" onClick={() => setEmailOpen(true)}><Send size={15} /> Email</Button>}
           <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}><Edit size={15} /> Επεξεργασία</Button>
           <Button variant="danger" size="sm" onClick={() => setDeleteOpen(true)}><Trash2 size={15} /></Button>
         </div>
@@ -173,6 +177,14 @@ export function ContactDetail() {
           }
         }} onCancel={() => setEditOpen(false)} loading={updateContact.isPending} />
       </Modal>
+
+      <EmailSendModal
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        recipientEmail={contact.email ?? ''}
+        recipientName={contact.full_name}
+        vars={contactVars(contact)}
+      />
 
       <ConfirmDialog open={deleteOpen} title="Διαγραφή Επαφής"
         message={`Διαγραφή "${contact.full_name}"; Η ενέργεια είναι μόνιμη.`}

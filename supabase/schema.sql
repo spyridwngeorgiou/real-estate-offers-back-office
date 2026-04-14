@@ -230,8 +230,12 @@ CREATE TABLE IF NOT EXISTS email_templates (
   name       text NOT NULL,
   subject    text,
   body       text NOT NULL,
+  category   text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Migration (run if table already exists):
+-- ALTER TABLE email_templates ADD COLUMN IF NOT EXISTS category text;
 
 CREATE INDEX IF NOT EXISTS idx_email_templates_name ON email_templates(name);
 

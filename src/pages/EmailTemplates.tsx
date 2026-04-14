@@ -1,21 +1,23 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Plus, Edit, Trash2, Copy, Send } from 'lucide-react'
+import { Plus, Edit, Trash2, Copy, Send, ChevronDown, ChevronUp } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
-import { FormField, inputClass } from '../components/ui/FormField'
+import { FormField, inputClass, selectClass } from '../components/ui/FormField'
 import { useEmailTemplates, useCreateEmailTemplate, useUpdateEmailTemplate, useDeleteEmailTemplate } from '../hooks/useEmailTemplates'
-import { useContacts } from '../hooks/useContacts'
 import { useUIStore } from '../store/uiStore'
 import { fmtDate } from '../lib/utils'
-import type { EmailTemplate, Contact } from '../types'
+import { EMAIL_TEMPLATE_CATEGORIES, TEMPLATE_VARIABLES, substituteVars } from '../lib/templateUtils'
+import { EmailSendModal } from '../components/shared/EmailSendModal'
+import type { EmailTemplate } from '../types'
 
 interface TemplateFormValues {
   name: string
   subject: string
   body: string
+  category: string
 }
 
 function TemplateForm({ initial, onSubmit, onCancel, loading }: {
@@ -24,24 +26,64 @@ function TemplateForm({ initial, onSubmit, onCancel, loading }: {
   onCancel: () => void
   loading?: boolean
 }) {
+  const [showVars, setShowVars] = useState(false)
   const { register, handleSubmit, formState: { errors } } = useForm<TemplateFormValues>({
-    defaultValues: { name: initial?.name ?? '', subject: initial?.subject ?? '', body: initial?.body ?? '' },
+    defaultValues: {
+      name: initial?.name ?? '',
+      subject: initial?.subject ?? '',
+      body: initial?.body ?? '',
+      category: initial?.category ?? '',
+    },
   })
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <FormField label="Όνομα Προτύπου" required error={errors.name?.message}>
-        <input {...register('name', { required: 'Απαιτείται όνομα' })} className={inputClass} placeholder="π.χ. Επιστολή Προσφοράς" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <FormField label="Όνομα Προτύπου" required error={errors.name?.message}>
+          <input {...register('name', { required: 'Απαιτείται όνομα' })} className={inputClass} placeholder="π.χ. Επιστολή Προσφοράς" />
+        </FormField>
+        <FormField label="Κατηγορία">
+          <select {...register('category')} className={selectClass}>
+            <option value="">— Επιλέξτε —</option>
+            {Object.entries(EMAIL_TEMPLATE_CATEGORIES).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </select>
+        </FormField>
+      </div>
+      <FormField label="Θέμα Email">
+        <input {...register('subject')} className={inputClass} placeholder="π.χ. Προσφορά για το ακίνητο στην {{property_address}}" />
       </FormField>
-      <FormField label="Θέμα Email" error={errors.subject?.message}>
-        <input {...register('subject')} className={inputClass} placeholder="π.χ. Προσφορά για το ακίνητο στην..." />
-      </FormField>
+
+      {/* Variables hint */}
+      <div className="rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden">
+        <button type="button" onClick={() => setShowVars(v => !v)}
+          className="w-full flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+          <span className="font-medium">Διαθέσιμες μεταβλητές <span className="font-normal text-slate-400">(κλικ για αντιγραφή)</span></span>
+          {showVars ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+        {showVars && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-3 bg-white dark:bg-slate-800">
+            {TEMPLATE_VARIABLES.map(v => (
+              <button key={v.key} type="button"
+                onClick={() => navigator.clipboard.writeText(`{{${v.key}}}`)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-left transition-colors group">
+                <code className="text-xs bg-slate-100 dark:bg-slate-700 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-mono group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40">
+                  {`{{${v.key}}}`}
+                </code>
+                <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{v.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <FormField label="Κείμενο" required error={errors.body?.message}>
         <textarea
           {...register('body', { required: 'Απαιτείται κείμενο' })}
           rows={10}
           className={inputClass}
-          placeholder="Αγαπητέ/ή..."
+          placeholder={'Αγαπητέ/ή {{contact_name}},\n\nΣας αποστέλλουμε την προσφορά μας ύψους {{offer_price}}...'}
         />
       </FormField>
       <div className="flex justify-end gap-3 pt-1">
@@ -59,31 +101,33 @@ export function EmailTemplates() {
   const deleteTemplate = useDeleteEmailTemplate()
   const addToast = useUIStore(s => s.addToast)
 
+  const [categoryFilter, setCategoryFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<EmailTemplate | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<EmailTemplate | null>(null)
   const [preview, setPreview] = useState<EmailTemplate | null>(null)
-  const [sendModalOpen, setSendModalOpen] = useState(false)
-  const [sendingTemplate, setSendingTemplate] = useState<EmailTemplate | null>(null)
-  const [selectedContacts, setSelectedContacts] = useState<string[]>([])
-  const [contactSearch, setContactSearch] = useState('')
-  const [manualEmails, setManualEmails] = useState('')
+  const [sendTarget, setSendTarget] = useState<EmailTemplate | null>(null)
 
-  const { data: contacts = [] } = useContacts({ search: contactSearch })
+  const filtered = categoryFilter ? templates.filter(t => t.category === categoryFilter) : templates
 
   async function handleSubmit(values: TemplateFormValues) {
     try {
+      const payload = {
+        name: values.name,
+        subject: values.subject || null,
+        body: values.body,
+        category: values.category || null,
+      }
       if (editing) {
-        await updateTemplate.mutateAsync({ id: editing.id, values })
+        await updateTemplate.mutateAsync({ id: editing.id, values: payload })
         addToast('Πρότυπο ενημερώθηκε', 'success')
       } else {
-        await createTemplate.mutateAsync({ name: values.name, subject: values.subject || null, body: values.body })
+        await createTemplate.mutateAsync(payload)
         addToast('Πρότυπο δημιουργήθηκε', 'success')
       }
       setModalOpen(false)
       setEditing(null)
     } catch (err: any) {
-      console.error('Error saving template:', err)
       addToast(err.message || 'Σφάλμα κατά την αποθήκευση', 'error')
     }
   }
@@ -95,60 +139,27 @@ export function EmailTemplates() {
       addToast('Πρότυπο διαγράφηκε', 'info')
       setDeleteTarget(null)
     } catch (err: any) {
-      console.error('Error deleting template:', err)
       addToast(err.message || 'Σφάλμα κατά τη διαγραφή', 'error')
     }
   }
 
-  function handleUse(t: EmailTemplate) {
+  async function handleDuplicate(t: EmailTemplate) {
+    try {
+      await createTemplate.mutateAsync({
+        name: `${t.name} (αντίγραφο)`,
+        subject: t.subject,
+        body: t.body,
+        category: t.category,
+      })
+      addToast('Πρότυπο αντιγράφηκε', 'success')
+    } catch (err: any) {
+      addToast(err.message || 'Σφάλμα', 'error')
+    }
+  }
+
+  function handleCopyText(t: EmailTemplate) {
     const text = [t.subject ? `Θέμα: ${t.subject}\n\n` : '', t.body].join('')
     navigator.clipboard.writeText(text).then(() => addToast('Αντιγράφηκε στο πρόχειρο', 'success'))
-  }
-
-  function openSendModal(t: EmailTemplate) {
-    setSendingTemplate(t)
-    setSelectedContacts([])
-    setContactSearch('')
-    setManualEmails('')
-    setSendModalOpen(true)
-  }
-
-  function handleSendEmail() {
-    if (!sendingTemplate) return
-    
-    // Get emails from selected contacts
-    const contactEmails = contacts
-      .filter(c => selectedContacts.includes(c.id) && c.email)
-      .map(c => c.email!)
-    
-    // Parse manual emails (comma or semicolon separated)
-    const manualEmailsList = manualEmails
-      .split(/[,;]+/)
-      .map(e => e.trim())
-      .filter(e => e.length > 0)
-    
-    // Combine all recipients
-    const allRecipients = [...contactEmails, ...manualEmailsList]
-    
-    if (allRecipients.length === 0) {
-      addToast('Προσθέστε τουλάχιστον έναν παραλήπτη', 'error')
-      return
-    }
-
-    const recipients = allRecipients.join(',')
-    const subject = encodeURIComponent(sendingTemplate.subject || '')
-    const body = encodeURIComponent(sendingTemplate.body)
-    const mailtoLink = `mailto:${recipients}?subject=${subject}&body=${body}`
-    
-    window.location.href = mailtoLink
-    setSendModalOpen(false)
-    addToast('Άνοιγμα προγράμματος email...', 'success')
-  }
-
-  function toggleContact(contactId: string) {
-    setSelectedContacts(prev =>
-      prev.includes(contactId) ? prev.filter(id => id !== contactId) : [...prev, contactId]
-    )
   }
 
   return (
@@ -159,14 +170,38 @@ export function EmailTemplates() {
         </Button>
       } />
 
-      <div className="p-4 lg:p-6">
+      <div className="p-4 lg:p-6 space-y-4">
+        {/* Category filter tabs */}
+        {templates.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setCategoryFilter('')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${!categoryFilter ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'}`}
+            >
+              Όλα ({templates.length})
+            </button>
+            {Object.entries(EMAIL_TEMPLATE_CATEGORIES).map(([val, label]) => {
+              const count = templates.filter(t => t.category === val).length
+              if (!count) return null
+              return (
+                <button key={val}
+                  onClick={() => setCategoryFilter(val)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${categoryFilter === val ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'}`}
+                >
+                  {label} ({count})
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {isLoading
           ? <p className="text-slate-400 dark:text-slate-500 text-sm">Φόρτωση…</p>
-          : templates.length === 0
+          : filtered.length === 0
             ? (
               <div className="text-center py-20 text-slate-400 dark:text-slate-500">
                 <p className="text-lg font-medium mb-2">Δεν υπάρχουν πρότυπα</p>
-                <p className="text-sm mb-6">Δημιουργήστε πρότυπα email για επαναχρησιμοποίηση.</p>
+                <p className="text-sm mb-6">Δημιουργήστε πρότυπα email για επαναχρησιμοποίηση με αυτόματη συμπλήρωση μεταβλητών.</p>
                 <Button variant="primary" onClick={() => { setEditing(null); setModalOpen(true) }}>
                   <Plus size={15} /> Νέο Πρότυπο
                 </Button>
@@ -178,25 +213,37 @@ export function EmailTemplates() {
                   <thead>
                     <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                       <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Όνομα</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase hidden sm:table-cell">Θέμα</th>
-                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase hidden md:table-cell">Δημιουργήθηκε</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase hidden sm:table-cell">Κατηγορία</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase hidden md:table-cell">Θέμα</th>
+                      <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase hidden lg:table-cell">Δημιουργήθηκε</th>
                       <th className="px-5 py-3" />
                     </tr>
                   </thead>
                   <tbody>
-                    {templates.map(t => (
+                    {filtered.map(t => (
                       <tr key={t.id} className="border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                         <td className="px-5 py-3 font-medium text-slate-900 dark:text-slate-100">
                           <button className="hover:underline text-left" onClick={() => setPreview(t)}>{t.name}</button>
                         </td>
-                        <td className="px-5 py-3 text-slate-500 dark:text-slate-400 truncate max-w-xs hidden sm:table-cell">{t.subject ?? '—'}</td>
-                        <td className="px-5 py-3 text-slate-400 dark:text-slate-500 hidden md:table-cell">{fmtDate(t.created_at)}</td>
+                        <td className="px-5 py-3 hidden sm:table-cell">
+                          {t.category
+                            ? <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{EMAIL_TEMPLATE_CATEGORIES[t.category] ?? t.category}</span>
+                            : <span className="text-slate-400 dark:text-slate-500">—</span>
+                          }
+                        </td>
+                        <td className="px-5 py-3 text-slate-500 dark:text-slate-400 truncate max-w-xs hidden md:table-cell">{t.subject ?? '—'}</td>
+                        <td className="px-5 py-3 text-slate-400 dark:text-slate-500 hidden lg:table-cell">{fmtDate(t.created_at)}</td>
                         <td className="px-5 py-3">
-                          <div className="flex gap-2 justify-end">
-                            <Button variant="primary" size="sm" onClick={() => openSendModal(t)}><Send size={14} /> Αποστολή</Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleUse(t)}><Copy size={14} /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => { setEditing(t); setModalOpen(true) }}><Edit size={14} /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(t)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></Button>
+                          <div className="flex gap-1 justify-end">
+                            <Button variant="primary" size="sm" onClick={() => setSendTarget(t)}><Send size={13} /> Αποστολή</Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleCopyText(t)}><Copy size={13} /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDuplicate(t)}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                              </svg>
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => { setEditing(t); setModalOpen(true) }}><Edit size={13} /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(t)} className="text-red-500 hover:text-red-700"><Trash2 size={13} /></Button>
                           </div>
                         </td>
                       </tr>
@@ -222,6 +269,11 @@ export function EmailTemplates() {
       <Modal open={!!preview} onClose={() => setPreview(null)} title={preview?.name ?? ''} size="lg">
         {preview && (
           <div className="space-y-4">
+            {preview.category && (
+              <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">
+                {EMAIL_TEMPLATE_CATEGORIES[preview.category] ?? preview.category}
+              </span>
+            )}
             {preview.subject && (
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Θέμα</p>
@@ -234,101 +286,19 @@ export function EmailTemplates() {
             </div>
             <div className="flex justify-end gap-3 pt-1">
               <Button variant="secondary" onClick={() => setPreview(null)}>Κλείσιμο</Button>
-              <Button variant="primary" onClick={() => { handleUse(preview); setPreview(null) }}><Copy size={14} /> Αντιγραφή</Button>
+              <Button variant="ghost" onClick={() => { handleCopyText(preview); setPreview(null) }}><Copy size={14} /> Αντιγραφή</Button>
+              <Button variant="primary" onClick={() => { setPreview(null); setSendTarget(preview) }}><Send size={14} /> Αποστολή</Button>
             </div>
           </div>
         )}
       </Modal>
 
-      {/* Send Email Modal */}
-      <Modal open={sendModalOpen} onClose={() => setSendModalOpen(false)} title="Αποστολή Email" size="lg">
-        {sendingTemplate && (
-          <div className="space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">{sendingTemplate.name}</p>
-              {sendingTemplate.subject && (
-                <p className="text-xs text-blue-700 dark:text-blue-300">Θέμα: {sendingTemplate.subject}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Διευθύνσεις Email (Χειροκίνητη Εισαγωγή)
-              </label>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-                Διαχωρίστε πολλαπλά email με κόμμα (,) ή ερωτηματικό (;)
-              </p>
-              <textarea
-                className={inputClass}
-                rows={2}
-                placeholder="π.χ. email@example.com, another@example.com"
-                value={manualEmails}
-                onChange={e => setManualEmails(e.target.value)}
-              />
-            </div>
-
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-              <FormField label="Αναζήτηση από Επαφές">
-                <input
-                  type="text"
-                  className={inputClass}
-                  placeholder="Όνομα ή email..."
-                  value={contactSearch}
-                  onChange={e => setContactSearch(e.target.value)}
-                />
-              </FormField>
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                Επιλέξτε Παραλήπτες ({selectedContacts.length})
-              </p>
-              <div className="border border-slate-200 dark:border-slate-700 rounded-lg max-h-64 overflow-y-auto">
-                {contacts.length === 0 ? (
-                  <p className="text-sm text-slate-400 dark:text-slate-500 p-4 text-center">Δεν βρέθηκαν επαφές</p>
-                ) : (
-                  contacts.map(contact => (
-                    <label
-                      key={contact.id}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700 last:border-0 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedContacts.includes(contact.id)}
-                        onChange={() => toggleContact(contact.id)}
-                        className="rounded border-slate-300 w-4 h-4 accent-blue-600"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{contact.full_name}</p>
-                        {contact.email && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{contact.email}</p>
-                        )}
-                        {!contact.email && (
-                          <p className="text-xs text-red-500">Δεν υπάρχει email</p>
-                        )}
-                      </div>
-                    </label>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-              <Button variant="secondary" onClick={() => setSendModalOpen(false)}>Ακύρωση</Button>
-              <Button
-                variant="primary"
-                onClick={handleSendEmail}
-                disabled={selectedContacts.length === 0 && !manualEmails.trim()}
-              >
-                <Send size={14} /> Άνοιγμα Email ({
-                  selectedContacts.length + 
-                  manualEmails.split(/[,;]+/).filter(e => e.trim()).length
-                })
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      {/* Send modal — no context, manual recipient entry */}
+      <EmailSendModal
+        open={!!sendTarget}
+        onClose={() => setSendTarget(null)}
+        template={sendTarget}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}

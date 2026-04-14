@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Edit, Trash2, Plus, Check, X as XIcon } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, Plus, Check, X as XIcon, Mail } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -15,6 +15,8 @@ import { InfoRow } from '../components/shared/InfoRow'
 import { useOffer, useUpdateOffer, useDeleteOffer, useCreateCounterOffer } from '../hooks/useOffers'
 import { CounterOfferForm } from '../components/offers/CounterOfferForm'
 import { CommissionList } from '../components/offers/CommissionList'
+import { EmailSendModal } from '../components/shared/EmailSendModal'
+import { offerVars } from '../lib/templateUtils'
 import { useUIStore } from '../store/uiStore'
 import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, FINANCING_OPTIONS } from '../lib/utils'
 
@@ -44,6 +46,7 @@ export function OfferDetail() {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [counterOpen, setCounterOpen] = useState(false)
+  const [emailOpen, setEmailOpen] = useState(false)
 
   const { data: offer, isLoading } = useOffer(id)
   const updateOffer = useUpdateOffer()
@@ -88,6 +91,7 @@ export function OfferDetail() {
       <Topbar title={`Προσφορά ${fmtMoney(offer.offer_price)}`} actions={
         <div className="flex gap-2 flex-wrap">
           <Button variant="secondary" size="sm" onClick={() => navigate('/offers')}><ArrowLeft size={15} /></Button>
+          <Button variant="secondary" size="sm" onClick={() => setEmailOpen(true)}><Mail size={15} /> Email</Button>
           <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}><Edit size={15} /> Επεξεργασία</Button>
           <Button variant="danger" size="sm" onClick={() => setDeleteOpen(true)}><Trash2 size={15} /></Button>
         </div>
@@ -283,6 +287,15 @@ export function OfferDetail() {
       <ConfirmDialog open={deleteOpen} title="Διαγραφή Προσφοράς"
         message="Η διαγραφή είναι μόνιμη. Συνέχεια;"
         onConfirm={handleDelete} onCancel={() => setDeleteOpen(false)} />
+
+      <EmailSendModal
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        recipientEmail={(offer as any).buyer?.email ?? (offer as any).contractor?.email ?? ''}
+        recipientName={(offer as any).buyer?.full_name ?? (offer as any).contractor?.full_name ?? ''}
+        vars={offerVars(offer)}
+        suggestedCategory={offer.status === 'accepted' ? 'acceptance' : offer.status === 'rejected' ? 'rejection' : offer.status === 'countered' ? 'counter_offer' : 'offer'}
+      />
 
       {/* Counter offer modal */}
       <Modal open={counterOpen} onClose={() => setCounterOpen(false)} title={`Αντιπροσφορά — Γύρος ${nextRound}`} size="sm">
