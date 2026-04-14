@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Edit, Trash2, Plus, Check, X as XIcon, Mail } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, Plus, Check, X as XIcon, Mail, Printer } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -15,6 +15,7 @@ import { InfoRow } from '../components/shared/InfoRow'
 import { useOffer, useUpdateOffer, useDeleteOffer, useCreateCounterOffer } from '../hooks/useOffers'
 import { CounterOfferForm } from '../components/offers/CounterOfferForm'
 import { CommissionList } from '../components/offers/CommissionList'
+import { OfferPrintView } from '../components/offers/OfferPrintView'
 import { EmailSendModal } from '../components/shared/EmailSendModal'
 import { offerVars } from '../lib/templateUtils'
 import { useUIStore } from '../store/uiStore'
@@ -92,6 +93,7 @@ export function OfferDetail() {
         <div className="flex gap-2 flex-wrap">
           <Button variant="secondary" size="sm" onClick={() => navigate('/offers')}><ArrowLeft size={15} /></Button>
           <Button variant="secondary" size="sm" onClick={() => setEmailOpen(true)}><Mail size={15} /> Email</Button>
+          <Button variant="secondary" size="sm" onClick={() => window.print()}><Printer size={15} /> PDF</Button>
           <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}><Edit size={15} /> Επεξεργασία</Button>
           <Button variant="danger" size="sm" onClick={() => setDeleteOpen(true)}><Trash2 size={15} /></Button>
         </div>
@@ -307,6 +309,9 @@ export function OfferDetail() {
           loading={createCounter.isPending}
         />
       </Modal>
+
+      {/* Print-only view — hidden on screen, shown by @media print */}
+      <OfferPrintView offer={offer} />
     </div>
   )
 }

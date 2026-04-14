@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Building2, FileText, Users, BarChart3, X, HelpCircle, LogOut, Mail, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, Building2, FileText, Users, BarChart3, X, HelpCircle, LogOut, Mail, ClipboardList, Calculator } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
 import { supabase } from '../../lib/supabase'
 
@@ -16,6 +16,7 @@ const NAV = [
 const NAV_SETTINGS = [
   { to: '/email-templates',  icon: Mail,          label: 'Πρότυπα Email' },
   // { to: '/offer-templates',  icon: ClipboardList, label: 'Πρότυπα Προσφοράς' }, // Hidden for now
+  { to: '/calculator',       icon: Calculator,    label: 'Υπολογιστής' },
 ]
 
 export function Sidebar() {

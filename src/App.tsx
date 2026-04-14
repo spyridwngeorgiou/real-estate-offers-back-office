@@ -17,6 +17,7 @@ const Analytics    = lazy(() => import('./pages/Analytics').then(m => ({ default
 const Welcome      = lazy(() => import('./pages/Welcome').then(m => ({ default: m.Welcome })))
 const EmailTemplates = lazy(() => import('./pages/EmailTemplates').then(m => ({ default: m.EmailTemplates })))
 const OfferTemplates = lazy(() => import('./pages/OfferTemplates').then(m => ({ default: m.OfferTemplates })))
+const Calculator     = lazy(() => import('./pages/Calculator').then(m => ({ default: m.Calculator })))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } }
@@ -56,6 +57,7 @@ function AppInner() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/email-templates" element={<EmailTemplates />} />
           <Route path="/offer-templates" element={<OfferTemplates />} />
+          <Route path="/calculator" element={<Calculator />} />
           <Route path="/guide" element={<Welcome />} />
         </Routes>
       </Suspense>

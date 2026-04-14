@@ -12,3 +12,24 @@
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }
+
+/* ─── Print / PDF ────────────────────────────────────────────────────────── */
+@media print {
+  /* Hide everything except the print view */
+  body > #root aside,
+  body > #root header,
+  [data-print="hidden"] { display: none !important; }
+
+  /* Show print view */
+  [data-print="show"] { display: block !important; }
+
+  body { background: white !important; color: black !important; font-size: 11pt; }
+
+  @page {
+    size: A4;
+    margin: 18mm 18mm 22mm 18mm;
+  }
+
+  /* Avoid page breaks inside cards */
+  .print-card { break-inside: avoid; }
+}
