@@ -148,7 +148,7 @@ export function PropertyDetail() {
             {id && <TaskList entityType="property" entityId={id} />}
 
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
-              <h3 className="font-semibold text-slate-900 mb-4">Αρχεία & Έγγραφα</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Αρχεία & Έγγραφα</h3>
               {id && <FileUpload entityType="property" entityId={id} />}
             </div>
           </div>

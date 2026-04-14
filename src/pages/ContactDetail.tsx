@@ -148,7 +148,7 @@ export function ContactDetail() {
             {id && <TaskList entityType="contact" entityId={id} />}
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-              <h3 className="font-semibold text-slate-900 mb-4">Αρχεία & Έγγραφα</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Αρχεία & Έγγραφα</h3>
               {id && <FileUpload entityType="contact" entityId={id} />}
             </div>
           </div>

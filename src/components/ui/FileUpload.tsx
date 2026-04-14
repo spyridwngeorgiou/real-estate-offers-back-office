@@ -45,15 +45,17 @@ export function FileUpload({ entityType, entityId }: FileUploadProps) {
       {/* Upload area */}
       <div className="mb-3 flex items-center gap-3">
         <select value={label} onChange={e => setLabel(e.target.value)}
-          className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 bg-white">
+          className="text-sm border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
           {FILE_LABELS.map(l => <option key={l}>{l}</option>)}
         </select>
-        <span className="text-xs text-slate-400">Επιλέξτε τύπο πριν ανεβάσετε</span>
+        <span className="text-xs text-slate-400 dark:text-slate-500">Επιλέξτε τύπο πριν ανεβάσετε</span>
       </div>
 
       <div
         className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors
-          ${dragging ? 'border-blue-400 bg-blue-50' : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50'}`}
+          ${dragging
+            ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+            : 'border-slate-200 dark:border-slate-600 hover:border-blue-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files) }}
@@ -61,10 +63,10 @@ export function FileUpload({ entityType, entityId }: FileUploadProps) {
       >
         {uploadMutation.isPending
           ? <Loader2 size={22} className="animate-spin mx-auto text-blue-500 mb-2" />
-          : <Upload size={22} className="mx-auto text-slate-400 mb-2" />
+          : <Upload size={22} className="mx-auto text-slate-400 dark:text-slate-500 mb-2" />
         }
-        <p className="text-sm text-slate-500">{uploadMutation.isPending ? 'Μεταφόρτωση…' : 'Σύρετε ή κάντε κλικ για ανέβασμα'}</p>
-        <p className="text-xs text-slate-400 mt-0.5">PDF, εικόνες, έγγραφα και άλλα (έως 100MB)</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{uploadMutation.isPending ? 'Μεταφόρτωση…' : 'Σύρετε ή κάντε κλικ για ανέβασμα'}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">PDF, εικόνες, έγγραφα και άλλα (έως 100MB)</p>
         <input ref={inputRef} type="file" multiple
           className="hidden" onChange={e => handleFiles(e.target.files)} />
       </div>
@@ -72,10 +74,10 @@ export function FileUpload({ entityType, entityId }: FileUploadProps) {
       {/* Photo gallery */}
       {images.length > 0 && (
         <div className="mt-4">
-          <p className="text-xs font-medium text-slate-500 uppercase mb-2">Φωτογραφίες ({images.length})</p>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-2">Φωτογραφίες ({images.length})</p>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {images.map((f, idx) => (
-              <div key={f.id} className="relative group aspect-square rounded-lg overflow-hidden bg-slate-100 cursor-pointer"
+              <div key={f.id} className="relative group aspect-square rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 cursor-pointer"
                 onClick={() => setLightbox(idx)}>
                 <img src={getPublicUrl(f.bucket_path)} alt={f.label ?? f.file_name}
                   className="w-full h-full object-cover transition-transform group-hover:scale-105" />
@@ -94,21 +96,21 @@ export function FileUpload({ entityType, entityId }: FileUploadProps) {
       {/* Docs list */}
       {docs.length > 0 && (
         <div className="mt-4">
-          <p className="text-xs font-medium text-slate-500 uppercase mb-2">Έγγραφα ({docs.length})</p>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-2">Έγγραφα ({docs.length})</p>
           <div className="space-y-2">
             {docs.map(f => (
-              <div key={f.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div key={f.id} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
                 <FileText size={16} className="text-red-400 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-700 truncate">{f.label || f.file_name}</p>
-                  <p className="text-xs text-slate-400">{f.file_name}{f.file_size ? ` · ${formatBytes(f.file_size)}` : ''}</p>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{f.label || f.file_name}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">{f.file_name}{f.file_size ? ` · ${formatBytes(f.file_size)}` : ''}</p>
                 </div>
                 <a href={getPublicUrl(f.bucket_path)} target="_blank" rel="noopener noreferrer"
-                  className="p-1.5 hover:bg-slate-200 rounded text-slate-500 shrink-0">
+                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-600 rounded text-slate-500 dark:text-slate-400 shrink-0">
                   <ExternalLink size={14} />
                 </a>
                 <button onClick={() => deleteMutation.mutate({ id: f.id, bucket_path: f.bucket_path })}
-                  className="p-1.5 hover:bg-red-100 rounded text-slate-400 hover:text-red-600 shrink-0">
+                  className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-slate-400 dark:text-slate-500 hover:text-red-600 shrink-0">
                   <Trash2 size={14} />
                 </button>
               </div>
