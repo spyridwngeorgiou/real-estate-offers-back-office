@@ -14,14 +14,26 @@ export function useOffers(filters?: { status?: string; property_id?: string; sea
         contractor:contacts!offers_contractor_id_fkey(id, full_name),
         buyer_agent:contacts!offers_buyer_agent_id_fkey(id, full_name),
         seller_agent:contacts!offers_seller_agent_id_fkey(id, full_name),
-        notary:contacts!offers_notary_id_fkey(id, full_name),
-        files:files!files_entity_id_fkey(id, file_name, bucket_path)
+        notary:contacts!offers_notary_id_fkey(id, full_name)
       `).order('created_at', { ascending: false })
       if (filters?.status) q = q.eq('status', filters.status)
       if (filters?.property_id) q = q.eq('property_id', filters.property_id)
       const { data, error } = await q
       if (error) throw error
-      return data as any[]
+      
+      // Fetch file counts for each offer separately
+      const offersWithFiles = await Promise.all(
+        (data || []).map(async (offer) => {
+          const { count } = await supabase
+            .from('files')
+            .select('*', { count: 'exact', head: true })
+            .eq('entity_type', 'offer')
+            .eq('entity_id', offer.id)
+          return { ...offer, fileCount: count || 0 }
+        })
+      )
+      
+      return offersWithFiles as any[]
     },
   })
 }

@@ -209,12 +209,12 @@ export function Offers() {
                             <td className="px-5 py-3 font-bold text-slate-900 dark:text-white" onClick={() => navigate(`/offers/${o.id}`)}>{fmtMoney(o.offer_price)}</td>
                             <td className="px-5 py-3" onClick={(e) => {
                               e.stopPropagation()
-                              if (o.files && o.files.length > 0) navigate(`/offers/${o.id}`)
+                              if (o.fileCount > 0) navigate(`/offers/${o.id}`)
                             }}>
-                              {o.files && o.files.length > 0 ? (
+                              {o.fileCount > 0 ? (
                                 <button className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm transition-colors">
                                   <Paperclip size={14} />
-                                  <span>{o.files.length}</span>
+                                  <span>{o.fileCount}</span>
                                 </button>
                               ) : (
                                 <span className="text-slate-400 dark:text-slate-500 text-xs">—</span>
