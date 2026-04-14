@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Plus, Edit, Trash2, Copy } from 'lucide-react'
+import { Plus, Edit, Trash2, Copy, Send } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { FormField, inputClass } from '../components/ui/FormField'
 import { useEmailTemplates, useCreateEmailTemplate, useUpdateEmailTemplate, useDeleteEmailTemplate } from '../hooks/useEmailTemplates'
+import { useContacts } from '../hooks/useContacts'
 import { useUIStore } from '../store/uiStore'
 import { fmtDate } from '../lib/utils'
-import type { EmailTemplate } from '../types'
+import type { EmailTemplate, Contact } from '../types'
 
 interface TemplateFormValues {
   name: string
@@ -62,6 +63,12 @@ export function EmailTemplates() {
   const [editing, setEditing] = useState<EmailTemplate | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<EmailTemplate | null>(null)
   const [preview, setPreview] = useState<EmailTemplate | null>(null)
+  const [sendModalOpen, setSendModalOpen] = useState(false)
+  const [sendingTemplate, setSendingTemplate] = useState<EmailTemplate | null>(null)
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([])
+  const [contactSearch, setContactSearch] = useState('')
+
+  const { data: contacts = [] } = useContacts({ search: contactSearch })
 
   async function handleSubmit(values: TemplateFormValues) {
     try {
@@ -95,6 +102,40 @@ export function EmailTemplates() {
   function handleUse(t: EmailTemplate) {
     const text = [t.subject ? `Θέμα: ${t.subject}\n\n` : '', t.body].join('')
     navigator.clipboard.writeText(text).then(() => addToast('Αντιγράφηκε στο πρόχειρο', 'success'))
+  }
+
+  function openSendModal(t: EmailTemplate) {
+    setSendingTemplate(t)
+    setSelectedContacts([])
+    setContactSearch('')
+    setSendModalOpen(true)
+  }
+
+  function handleSendEmail() {
+    if (!sendingTemplate || selectedContacts.length === 0) return
+    const recipients = contacts
+      .filter(c => selectedContacts.includes(c.id) && c.email)
+      .map(c => c.email)
+      .join(',')
+    
+    if (!recipients) {
+      addToast('Δεν υπάρχουν διευθύνσεις email για τις επιλεγμένες επαφές', 'error')
+      return
+    }
+
+    const subject = encodeURIComponent(sendingTemplate.subject || '')
+    const body = encodeURIComponent(sendingTemplate.body)
+    const mailtoLink = `mailto:${recipients}?subject=${subject}&body=${body}`
+    
+    window.location.href = mailtoLink
+    setSendModalOpen(false)
+    addToast('Άνοιγμα προγράμματος email...', 'success')
+  }
+
+  function toggleContact(contactId: string) {
+    setSelectedContacts(prev =>
+      prev.includes(contactId) ? prev.filter(id => id !== contactId) : [...prev, contactId]
+    )
   }
 
   return (
@@ -139,7 +180,8 @@ export function EmailTemplates() {
                         <td className="px-5 py-3 text-slate-400 dark:text-slate-500 hidden md:table-cell">{fmtDate(t.created_at)}</td>
                         <td className="px-5 py-3">
                           <div className="flex gap-2 justify-end">
-                            <Button variant="ghost" size="sm" onClick={() => handleUse(t)}><Copy size={14} /> Αντιγραφή</Button>
+                            <Button variant="primary" size="sm" onClick={() => openSendModal(t)}><Send size={14} /> Αποστολή</Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleUse(t)}><Copy size={14} /></Button>
                             <Button variant="ghost" size="sm" onClick={() => { setEditing(t); setModalOpen(true) }}><Edit size={14} /></Button>
                             <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(t)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></Button>
                           </div>
@@ -180,6 +222,75 @@ export function EmailTemplates() {
             <div className="flex justify-end gap-3 pt-1">
               <Button variant="secondary" onClick={() => setPreview(null)}>Κλείσιμο</Button>
               <Button variant="primary" onClick={() => { handleUse(preview); setPreview(null) }}><Copy size={14} /> Αντιγραφή</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Send Email Modal */}
+      <Modal open={sendModalOpen} onClose={() => setSendModalOpen(false)} title="Αποστολή Email" size="lg">
+        {sendingTemplate && (
+          <div className="space-y-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">{sendingTemplate.name}</p>
+              {sendingTemplate.subject && (
+                <p className="text-xs text-blue-700 dark:text-blue-300">Θέμα: {sendingTemplate.subject}</p>
+              )}
+            </div>
+
+            <FormField label="Αναζήτηση Επαφής">
+              <input
+                type="text"
+                className={inputClass}
+                placeholder="Όνομα ή email..."
+                value={contactSearch}
+                onChange={e => setContactSearch(e.target.value)}
+              />
+            </FormField>
+
+            <div>
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                Επιλέξτε Παραλήπτες ({selectedContacts.length})
+              </p>
+              <div className="border border-slate-200 dark:border-slate-700 rounded-lg max-h-64 overflow-y-auto">
+                {contacts.length === 0 ? (
+                  <p className="text-sm text-slate-400 dark:text-slate-500 p-4 text-center">Δεν βρέθηκαν επαφές</p>
+                ) : (
+                  contacts.map(contact => (
+                    <label
+                      key={contact.id}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700 last:border-0 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedContacts.includes(contact.id)}
+                        onChange={() => toggleContact(contact.id)}
+                        className="rounded border-slate-300 w-4 h-4 accent-blue-600"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{contact.full_name}</p>
+                        {contact.email && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{contact.email}</p>
+                        )}
+                        {!contact.email && (
+                          <p className="text-xs text-red-500">Δεν υπάρχει email</p>
+                        )}
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <Button variant="secondary" onClick={() => setSendModalOpen(false)}>Ακύρωση</Button>
+              <Button
+                variant="primary"
+                onClick={handleSendEmail}
+                disabled={selectedContacts.length === 0}
+              >
+                <Send size={14} /> Άνοιγμα Email ({selectedContacts.length})
+              </Button>
             </div>
           </div>
         )}

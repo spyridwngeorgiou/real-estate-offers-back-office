@@ -15,7 +15,7 @@ const NAV = [
 
 const NAV_SETTINGS = [
   { to: '/email-templates',  icon: Mail,          label: 'Πρότυπα Email' },
-  { to: '/offer-templates',  icon: ClipboardList, label: 'Πρότυπα Προσφοράς' },
+  // { to: '/offer-templates',  icon: ClipboardList, label: 'Πρότυπα Προσφοράς' }, // Hidden for now
 ]
 
 export function Sidebar() {
