@@ -67,6 +67,7 @@ export function EmailTemplates() {
   const [sendingTemplate, setSendingTemplate] = useState<EmailTemplate | null>(null)
   const [selectedContacts, setSelectedContacts] = useState<string[]>([])
   const [contactSearch, setContactSearch] = useState('')
+  const [manualEmails, setManualEmails] = useState('')
 
   const { data: contacts = [] } = useContacts({ search: contactSearch })
 
@@ -108,21 +109,33 @@ export function EmailTemplates() {
     setSendingTemplate(t)
     setSelectedContacts([])
     setContactSearch('')
+    setManualEmails('')
     setSendModalOpen(true)
   }
 
   function handleSendEmail() {
-    if (!sendingTemplate || selectedContacts.length === 0) return
-    const recipients = contacts
-      .filter(c => selectedContacts.includes(c.id) && c.email)
-      .map(c => c.email)
-      .join(',')
+    if (!sendingTemplate) return
     
-    if (!recipients) {
-      addToast('Δεν υπάρχουν διευθύνσεις email για τις επιλεγμένες επαφές', 'error')
+    // Get emails from selected contacts
+    const contactEmails = contacts
+      .filter(c => selectedContacts.includes(c.id) && c.email)
+      .map(c => c.email!)
+    
+    // Parse manual emails (comma or semicolon separated)
+    const manualEmailsList = manualEmails
+      .split(/[,;]+/)
+      .map(e => e.trim())
+      .filter(e => e.length > 0)
+    
+    // Combine all recipients
+    const allRecipients = [...contactEmails, ...manualEmailsList]
+    
+    if (allRecipients.length === 0) {
+      addToast('Προσθέστε τουλάχιστον έναν παραλήπτη', 'error')
       return
     }
 
+    const recipients = allRecipients.join(',')
     const subject = encodeURIComponent(sendingTemplate.subject || '')
     const body = encodeURIComponent(sendingTemplate.body)
     const mailtoLink = `mailto:${recipients}?subject=${subject}&body=${body}`
@@ -238,15 +251,33 @@ export function EmailTemplates() {
               )}
             </div>
 
-            <FormField label="Αναζήτηση Επαφής">
-              <input
-                type="text"
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Διευθύνσεις Email (Χειροκίνητη Εισαγωγή)
+              </label>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                Διαχωρίστε πολλαπλά email με κόμμα (,) ή ερωτηματικό (;)
+              </p>
+              <textarea
                 className={inputClass}
-                placeholder="Όνομα ή email..."
-                value={contactSearch}
-                onChange={e => setContactSearch(e.target.value)}
+                rows={2}
+                placeholder="π.χ. email@example.com, another@example.com"
+                value={manualEmails}
+                onChange={e => setManualEmails(e.target.value)}
               />
-            </FormField>
+            </div>
+
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+              <FormField label="Αναζήτηση από Επαφές">
+                <input
+                  type="text"
+                  className={inputClass}
+                  placeholder="Όνομα ή email..."
+                  value={contactSearch}
+                  onChange={e => setContactSearch(e.target.value)}
+                />
+              </FormField>
+            </div>
 
             <div>
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -287,9 +318,12 @@ export function EmailTemplates() {
               <Button
                 variant="primary"
                 onClick={handleSendEmail}
-                disabled={selectedContacts.length === 0}
+                disabled={selectedContacts.length === 0 && !manualEmails.trim()}
               >
-                <Send size={14} /> Άνοιγμα Email ({selectedContacts.length})
+                <Send size={14} /> Άνοιγμα Email ({
+                  selectedContacts.length + 
+                  manualEmails.split(/[,;]+/).filter(e => e.trim()).length
+                })
               </Button>
             </div>
           </div>
