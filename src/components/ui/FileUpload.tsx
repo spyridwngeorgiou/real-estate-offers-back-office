@@ -99,18 +99,24 @@ export function FileUpload({ entityType, entityId }: FileUploadProps) {
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-2">Έγγραφα ({docs.length})</p>
           <div className="space-y-2">
             {docs.map(f => (
-              <div key={f.id} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
+              <div key={f.id} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group">
                 <FileText size={16} className="text-red-400 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{f.label || f.file_name}</p>
+                <a
+                  href={getPublicUrl(f.bucket_path)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 min-w-0 cursor-pointer"
+                >
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    {f.label || f.file_name}
+                  </p>
                   <p className="text-xs text-slate-400 dark:text-slate-500">{f.file_name}{f.file_size ? ` · ${formatBytes(f.file_size)}` : ''}</p>
-                </div>
-                <a href={getPublicUrl(f.bucket_path)} target="_blank" rel="noopener noreferrer"
-                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-600 rounded text-slate-500 dark:text-slate-400 shrink-0">
-                  <ExternalLink size={14} />
                 </a>
-                <button onClick={() => deleteMutation.mutate({ id: f.id, bucket_path: f.bucket_path })}
-                  className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-slate-400 dark:text-slate-500 hover:text-red-600 shrink-0">
+                <ExternalLink size={13} className="text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400 transition-colors shrink-0" />
+                <button
+                  onClick={e => { e.preventDefault(); deleteMutation.mutate({ id: f.id, bucket_path: f.bucket_path }) }}
+                  className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-slate-400 dark:text-slate-500 hover:text-red-600 shrink-0"
+                >
                   <Trash2 size={14} />
                 </button>
               </div>
