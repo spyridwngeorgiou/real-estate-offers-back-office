@@ -96,7 +96,8 @@ function GlobalSearch() {
 
 export function Topbar({ title, actions }: TopbarProps) {
   const toggleSidebar = useUIStore(s => s.toggleSidebar)
-  const { darkMode, toggleDarkMode } = useUIStore(s => ({ darkMode: s.darkMode, toggleDarkMode: s.toggleDarkMode }))
+  const darkMode = useUIStore(s => s.darkMode)
+  const toggleDarkMode = useUIStore(s => s.toggleDarkMode)
   return (
     <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 lg:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-20">
       <div className="flex items-center gap-3 min-w-0">

@@ -17,10 +17,14 @@ interface UIStore {
 }
 
 function initDarkMode(): boolean {
-  const stored = localStorage.getItem('re_dark_mode')
-  const dark = stored !== null ? stored === 'true' : window.matchMedia('(prefers-color-scheme: dark)').matches
-  document.documentElement.classList.toggle('dark', dark)
-  return dark
+  try {
+    const stored = localStorage.getItem('re_dark_mode')
+    const dark = stored !== null ? stored === 'true' : window.matchMedia('(prefers-color-scheme: dark)').matches
+    document.documentElement.classList.toggle('dark', dark)
+    return dark
+  } catch {
+    return false
+  }
 }
 
 export const useUIStore = create<UIStore>((set) => ({
