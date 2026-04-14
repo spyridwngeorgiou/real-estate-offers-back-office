@@ -113,3 +113,57 @@ export interface Activity {
   entity_id: string | null
   created_at: string
 }
+
+export interface Task {
+  id: string
+  entity_type: string
+  entity_id: string
+  title: string
+  due_date: string | null
+  status: 'open' | 'done'
+  created_at: string
+}
+
+export interface Commission {
+  id: string
+  offer_id: string
+  agent_contact_id: string | null
+  rate: number | null
+  amount: number | null
+  invoiced: boolean
+  received: boolean
+  notes: string | null
+  created_at: string
+  agent?: { full_name: string } | null
+}
+
+export interface Viewing {
+  id: string
+  property_id: string
+  contact_id: string
+  viewed_at: string
+  notes: string | null
+  created_at: string
+  contact?: { full_name: string } | null
+}
+
+export interface EmailTemplate {
+  id: string
+  name: string
+  subject: string | null
+  body: string
+  created_at: string
+}
+
+export interface OfferTemplate {
+  id: string
+  name: string
+  category: string | null
+  status: string | null
+  offer_price: number | null
+  vat_rate: number | null
+  vat_included: boolean
+  payment_terms: string | null
+  notes: string | null
+  created_at: string
+}

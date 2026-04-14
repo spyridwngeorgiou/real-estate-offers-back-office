@@ -10,9 +10,11 @@ import { OfferForm } from '../components/offers/OfferForm'
 import { FileUpload } from '../components/ui/FileUpload'
 import { DetailPageSkeleton } from '../components/ui/Skeleton'
 import { NotesList } from '../components/shared/NotesList'
+import { TaskList } from '../components/shared/TaskList'
 import { InfoRow } from '../components/shared/InfoRow'
 import { useOffer, useUpdateOffer, useDeleteOffer, useCreateCounterOffer } from '../hooks/useOffers'
 import { CounterOfferForm } from '../components/offers/CounterOfferForm'
+import { CommissionList } from '../components/offers/CommissionList'
 import { useUIStore } from '../store/uiStore'
 import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, FINANCING_OPTIONS } from '../lib/utils'
 
@@ -257,7 +259,9 @@ export function OfferDetail() {
               }
             </div>
 
+            {id && <CommissionList offerId={id} offerPrice={offer.offer_price} />}
             {id && <NotesList entityType="offer" entityId={id} />}
+            {id && <TaskList entityType="offer" entityId={id} />}
 
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
               <h3 className="font-semibold text-slate-900 mb-4">Αρχεία & Έγγραφα</h3>

@@ -8,6 +8,7 @@ import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { ContactForm } from '../components/contacts/ContactForm'
 import { NotesList } from '../components/shared/NotesList'
+import { TaskList } from '../components/shared/TaskList'
 import { FileUpload } from '../components/ui/FileUpload'
 import { useContact, useUpdateContact, useDeleteContact } from '../hooks/useContacts'
 import { useOffers } from '../hooks/useOffers'
@@ -144,6 +145,7 @@ export function ContactDetail() {
             </div>
 
             {id && <NotesList entityType="contact" entityId={id} />}
+            {id && <TaskList entityType="contact" entityId={id} />}
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
               <h3 className="font-semibold text-slate-900 mb-4">Αρχεία & Έγγραφα</h3>

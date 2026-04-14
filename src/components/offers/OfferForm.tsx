@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
-import { ChevronDown, ChevronUp, MapPin, Euro, Maximize2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, MapPin, Euro, Maximize2, ClipboardList, BookmarkPlus } from 'lucide-react'
 import { FormField, inputClass, selectClass } from '../ui/FormField'
 import { Button } from '../ui/Button'
+import { Modal } from '../ui/Modal'
 import { InlinePhotoPicker } from '../ui/InlinePhotoPicker'
 import { useProperties } from '../../hooks/useProperties'
 import { useContacts } from '../../hooks/useContacts'
+import { useOfferTemplates, useCreateOfferTemplate } from '../../hooks/useOfferTemplates'
 import { FINANCING_OPTIONS, OFFER_CATEGORY_LABELS, fmtMoney, pricePerSqm, PROPERTY_TYPE_LABELS } from '../../lib/utils'
-import type { Offer } from '../../types'
+import type { Offer, OfferTemplate } from '../../types'
 
 interface OfferFormProps {
   initial?: Partial<Offer>
@@ -35,8 +37,14 @@ function contactIdField(category: string) {
 
 export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading, onPhotosChange, onDirtyChange }: OfferFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false)
+  const [newTemplateName, setNewTemplateName] = useState('')
 
-  const { register, handleSubmit, control, formState: { errors, isDirty, dirtyFields } } = useForm({
+  const { data: offerTemplates = [] } = useOfferTemplates()
+  const createOfferTemplate = useCreateOfferTemplate()
+
+  const { register, handleSubmit, control, reset, getValues, formState: { errors, isDirty, dirtyFields } } = useForm({
     defaultValues: {
       ...initial,
       property_id: initial?.property_id ?? prePropertyId ?? '',
@@ -92,8 +100,49 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
     await onSubmit(values)
   }
 
+  function applyTemplate(t: OfferTemplate) {
+    const current = getValues()
+    reset({
+      ...current,
+      category: t.category ?? current.category,
+      offer_price: t.offer_price ?? current.offer_price,
+      vat_rate: t.vat_rate ?? current.vat_rate,
+      vat_included: t.vat_included,
+      special_terms: t.payment_terms ?? current.special_terms,
+      internal_notes: t.notes ?? current.internal_notes,
+    })
+    setTemplatePickerOpen(false)
+  }
+
+  async function saveAsTemplate() {
+    if (!newTemplateName.trim()) return
+    const vals = getValues()
+    await createOfferTemplate.mutateAsync({
+      name: newTemplateName.trim(),
+      category: vals.category || null,
+      offer_price: vals.offer_price ? Number(vals.offer_price) : null,
+      vat_rate: vals.vat_rate ? Number(vals.vat_rate) : null,
+      vat_included: vals.vat_included ?? false,
+      payment_terms: (vals as any).special_terms || null,
+      notes: (vals as any).internal_notes || null,
+      status: null,
+    })
+    setNewTemplateName('')
+    setSaveTemplateOpen(false)
+  }
+
   return (
     <form onSubmit={handleSubmit(handleSubmitWrapped)} className="space-y-5">
+
+      {/* Template actions */}
+      <div className="flex gap-2 pb-1 border-b border-slate-100 dark:border-slate-700">
+        <Button type="button" variant="secondary" size="sm" onClick={() => setTemplatePickerOpen(true)} disabled={offerTemplates.length === 0}>
+          <ClipboardList size={14} /> Φόρτωση Προτύπου
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setSaveTemplateOpen(true)}>
+          <BookmarkPlus size={14} /> Αποθήκευση ως Πρότυπο
+        </Button>
+      </div>
 
       {/* Category + Status */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -272,6 +321,43 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
           {loading ? 'Αποθήκευση…' : 'Αποθήκευση'}
         </Button>
       </div>
+
+      {/* Template picker */}
+      <Modal open={templatePickerOpen} onClose={() => setTemplatePickerOpen(false)} title="Φόρτωση Προτύπου" size="sm">
+        <div className="space-y-2">
+          {offerTemplates.map(t => (
+            <button key={t.id} onClick={() => applyTemplate(t)}
+              className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 transition-colors">
+              <p className="font-medium text-slate-900 dark:text-slate-100 text-sm">{t.name}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                {t.category ? (OFFER_CATEGORY_LABELS[t.category as keyof typeof OFFER_CATEGORY_LABELS] ?? t.category) : ''}
+                {t.offer_price ? ` · ${fmtMoney(t.offer_price)}` : ''}
+              </p>
+            </button>
+          ))}
+        </div>
+      </Modal>
+
+      {/* Save as template */}
+      <Modal open={saveTemplateOpen} onClose={() => setSaveTemplateOpen(false)} title="Αποθήκευση ως Πρότυπο" size="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Εισάγετε όνομα για το νέο πρότυπο.</p>
+          <input
+            value={newTemplateName}
+            onChange={e => setNewTemplateName(e.target.value)}
+            placeholder="π.χ. Τυπική Προσφορά Αγοράς"
+            className={inputClass}
+            onKeyDown={e => e.key === 'Enter' && saveAsTemplate()}
+          />
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" type="button" onClick={() => setSaveTemplateOpen(false)}>Ακύρωση</Button>
+            <Button variant="primary" type="button" onClick={saveAsTemplate}
+              disabled={!newTemplateName.trim() || createOfferTemplate.isPending}>
+              {createOfferTemplate.isPending ? 'Αποθήκευση…' : 'Αποθήκευση'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </form>
   )
 }

@@ -12,6 +12,8 @@ import { DetailPageSkeleton } from '../components/ui/Skeleton'
 import { OfferForm } from '../components/offers/OfferForm'
 import { OfferCompare } from '../components/offers/OfferCompare'
 import { NotesList } from '../components/shared/NotesList'
+import { TaskList } from '../components/shared/TaskList'
+import { ViewingLog } from '../components/properties/ViewingLog'
 import { InfoRow } from '../components/shared/InfoRow'
 import { useProperty, useUpdateProperty, useDeleteProperty } from '../hooks/useProperties'
 import { useOffers, useCreateOffer, useUpdateOffer } from '../hooks/useOffers'
@@ -141,7 +143,9 @@ export function PropertyDetail() {
               }
             </div>
 
+            {id && <ViewingLog propertyId={id} />}
             {id && <NotesList entityType="property" entityId={id} />}
+            {id && <TaskList entityType="property" entityId={id} />}
 
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
               <h3 className="font-semibold text-slate-900 mb-4">Αρχεία & Έγγραφα</h3>
