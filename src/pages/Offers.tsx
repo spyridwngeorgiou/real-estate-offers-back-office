@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, FileText, GitCompare, ArrowUp, ArrowDown, Download, Paperclip } from 'lucide-react'
+import { Plus, Search, FileText, GitCompare, ArrowUp, ArrowDown, Download, Paperclip, ExternalLink, Image } from 'lucide-react'
+import { useFiles, getPublicUrl } from '../hooks/useFiles'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -28,6 +29,62 @@ const CATEGORY_OPTIONS = [
   { value: '', label: 'Όλες οι κατηγορίες' },
   ...Object.entries(OFFER_CATEGORY_LABELS).map(([v, l]) => ({ value: v, label: l })),
 ]
+
+function AttachmentPopover({ offerId, count }: { offerId: string; count: number }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const { data: files = [] } = useFiles('offer', open ? offerId : undefined)
+
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(v => !v) }}
+        className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm transition-colors"
+      >
+        <Paperclip size={14} />
+        <span>{count}</span>
+      </button>
+
+      {open && (
+        <div className="absolute z-50 top-full mt-1 left-0 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+          {files.length === 0
+            ? <p className="px-4 py-3 text-sm text-slate-400 dark:text-slate-500">Φόρτωση…</p>
+            : files.map(f => {
+                const isImage = f.mime_type?.startsWith('image')
+                return (
+                  <a
+                    key={f.id}
+                    href={getPublicUrl(f.bucket_path)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-50 dark:border-slate-700/50 last:border-0 transition-colors group"
+                  >
+                    {isImage
+                      ? <Image size={14} className="text-blue-400 shrink-0" />
+                      : <FileText size={14} className="text-red-400 shrink-0" />
+                    }
+                    <span className="flex-1 text-sm text-slate-700 dark:text-slate-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                      {f.label || f.file_name}
+                    </span>
+                    <ExternalLink size={12} className="text-slate-300 dark:text-slate-600 group-hover:text-slate-500 shrink-0" />
+                  </a>
+                )
+              })
+          }
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function Offers() {
   const navigate = useNavigate()
@@ -207,18 +264,11 @@ export function Offers() {
                               {o.buyer?.full_name ?? o.contractor?.full_name ?? '—'}
                             </td>
                             <td className="px-5 py-3 font-bold text-slate-900 dark:text-white" onClick={() => navigate(`/offers/${o.id}`)}>{fmtMoney(o.offer_price)}</td>
-                            <td className="px-5 py-3" onClick={(e) => {
-                              e.stopPropagation()
-                              if (o.fileCount > 0) navigate(`/offers/${o.id}`)
-                            }}>
-                              {o.fileCount > 0 ? (
-                                <button className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm transition-colors">
-                                  <Paperclip size={14} />
-                                  <span>{o.fileCount}</span>
-                                </button>
-                              ) : (
-                                <span className="text-slate-400 dark:text-slate-500 text-xs">—</span>
-                              )}
+                            <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                              {o.fileCount > 0
+                                ? <AttachmentPopover offerId={o.id} count={o.fileCount} />
+                                : <span className="text-slate-400 dark:text-slate-500 text-xs">—</span>
+                              }
                             </td>
                             <td className="px-5 py-3" onClick={() => navigate(`/offers/${o.id}`)}>
                               <Badge label={OFFER_STATUS_LABELS[o.status] ?? o.status} variant={o.status} />
