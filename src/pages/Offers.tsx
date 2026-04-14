@@ -120,29 +120,29 @@ export function Offers() {
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Αναζήτηση ακινήτου ή αγοραστή…"
-              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" />
           </div>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            className="text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            className="text-sm border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
             {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-            className="text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            className="text-sm border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
             {CATEGORY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
 
         {isLoading
-          ? <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-400">Φόρτωση…</div>
+          ? <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-400 dark:text-slate-500">Φόρτωση…</div>
           : filtered.length === 0
             ? <EmptyState icon={<FileText size={48} />} title="Δεν βρέθηκαν προσφορές"
                 description="Καταχωρήστε την πρώτη σας προσφορά."
                 action={<Button variant="primary" onClick={() => setModalOpen(true)}><Plus size={16} /> Νέα Προσφορά</Button>} />
-            : <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            : <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50">
+                      <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                         <th className="px-3 py-3 w-10">
                           <input type="checkbox" className="rounded border-slate-300"
                             checked={selectedIds.size === filtered.length && filtered.length > 0}
@@ -159,7 +159,7 @@ export function Offers() {
                           { col: 'expires_at', label: 'Λήξη' },
                         ].map(({ col, label }) => (
                           <th key={label}
-                            className={`px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap ${col ? 'cursor-pointer hover:text-slate-800 select-none' : ''}`}
+                            className={`px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase whitespace-nowrap ${col ? 'cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 select-none' : ''}`}
                             onClick={() => col && toggleSort(col)}>
                             <span className="inline-flex items-center gap-1">
                               {label}
@@ -174,9 +174,19 @@ export function Offers() {
                       {filtered.map((o: any) => {
                         const listPrice = o.property?.list_price
                         const diff = listPrice ? ((o.offer_price - listPrice) / listPrice * 100) : null
+                        const isActive = o.status === 'pending' || o.status === 'countered'
+                        const expDate = o.expires_at ? new Date(o.expires_at) : null
+                        const now = new Date()
+                        const isExpired = isActive && expDate && expDate < now
+                        const isExpiringSoon = isActive && expDate && !isExpired && (expDate.getTime() - now.getTime()) / 86400000 <= 3
+                        const expiryClass = isExpired
+                          ? 'text-red-600 dark:text-red-400 font-medium'
+                          : isExpiringSoon
+                            ? 'text-amber-600 dark:text-amber-400 font-medium'
+                            : 'text-slate-400 dark:text-slate-500'
                         return (
                           <tr key={o.id}
-                            className={`border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors ${selectedIds.has(o.id) ? 'bg-blue-50' : ''}`}>
+                            className={`border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors ${selectedIds.has(o.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
                             <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
                               <input type="checkbox" className="rounded border-slate-300"
                                 checked={selectedIds.has(o.id)}
@@ -187,16 +197,16 @@ export function Offers() {
                                 }} />
                             </td>
                             <td className="px-5 py-3" onClick={() => navigate(`/offers/${o.id}`)}>
-                              <div className="font-medium text-slate-900">{o.property?.address ?? '—'}</div>
-                              <div className="text-xs text-slate-400">{o.property?.city ?? ''}</div>
+                              <div className="font-medium text-slate-900 dark:text-slate-100">{o.property?.address ?? '—'}</div>
+                              <div className="text-xs text-slate-400 dark:text-slate-500">{o.property?.city ?? ''}</div>
                             </td>
                             <td className="px-5 py-3" onClick={() => navigate(`/offers/${o.id}`)}>
-                              {o.category ? <span className="text-xs font-medium bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">{OFFER_CATEGORY_LABELS[o.category] ?? o.category}</span> : <span className="text-slate-400">—</span>}
+                              {o.category ? <Badge label={OFFER_CATEGORY_LABELS[o.category] ?? o.category} variant="default" /> : <span className="text-slate-400 dark:text-slate-500">—</span>}
                             </td>
-                            <td className="px-5 py-3 text-slate-700" onClick={() => navigate(`/offers/${o.id}`)}>
+                            <td className="px-5 py-3 text-slate-700 dark:text-slate-300" onClick={() => navigate(`/offers/${o.id}`)}>
                               {o.buyer?.full_name ?? o.contractor?.full_name ?? '—'}
                             </td>
-                            <td className="px-5 py-3 font-bold text-slate-900" onClick={() => navigate(`/offers/${o.id}`)}>{fmtMoney(o.offer_price)}</td>
+                            <td className="px-5 py-3 font-bold text-slate-900 dark:text-white" onClick={() => navigate(`/offers/${o.id}`)}>{fmtMoney(o.offer_price)}</td>
                             <td className="px-5 py-3" onClick={() => navigate(`/offers/${o.id}`)}>
                               {diff !== null
                                 ? <span className={`text-xs font-medium ${diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -208,8 +218,12 @@ export function Offers() {
                             <td className="px-5 py-3" onClick={() => navigate(`/offers/${o.id}`)}>
                               <Badge label={OFFER_STATUS_LABELS[o.status] ?? o.status} variant={o.status} />
                             </td>
-                            <td className="px-5 py-3 text-slate-400 whitespace-nowrap" onClick={() => navigate(`/offers/${o.id}`)}>{fmtDate(o.offer_date)}</td>
-                            <td className="px-5 py-3 text-slate-400 whitespace-nowrap" onClick={() => navigate(`/offers/${o.id}`)}>{fmtDate(o.expires_at)}</td>
+                            <td className="px-5 py-3 text-slate-400 dark:text-slate-500 whitespace-nowrap" onClick={() => navigate(`/offers/${o.id}`)}>{fmtDate(o.offer_date)}</td>
+                            <td className={`px-5 py-3 whitespace-nowrap ${expiryClass}`} onClick={() => navigate(`/offers/${o.id}`)}>
+                              {fmtDate(o.expires_at)}
+                              {isExpired && <span className="ml-1 text-xs">(Έληξε)</span>}
+                              {isExpiringSoon && <span className="ml-1 text-xs">(Σύντομα)</span>}
+                            </td>
                             <td className="px-5 py-3">
                               <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); navigate(`/offers/${o.id}`) }}>
                                 Άνοιγμα →

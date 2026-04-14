@@ -8,19 +8,14 @@ import { Modal } from '../components/ui/Modal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { OfferForm } from '../components/offers/OfferForm'
 import { FileUpload } from '../components/ui/FileUpload'
+import { DetailPageSkeleton } from '../components/ui/Skeleton'
 import { NotesList } from '../components/shared/NotesList'
+import { InfoRow } from '../components/shared/InfoRow'
 import { useOffer, useUpdateOffer, useDeleteOffer, useCreateCounterOffer } from '../hooks/useOffers'
+import { CounterOfferForm } from '../components/offers/CounterOfferForm'
 import { useUIStore } from '../store/uiStore'
 import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, FINANCING_OPTIONS } from '../lib/utils'
 
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex justify-between gap-4 py-2 border-b border-slate-100 last:border-0">
-      <span className="text-sm text-slate-500 shrink-0">{label}</span>
-      <span className="text-sm font-medium text-slate-900 text-right">{value ?? '—'}</span>
-    </div>
-  )
-}
 
 const STATUS_TRANSITIONS: Record<string, string[]> = {
   pending:   ['accepted', 'rejected', 'withdrawn', 'countered'],
@@ -47,17 +42,14 @@ export function OfferDetail() {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [counterOpen, setCounterOpen] = useState(false)
-  const [counterPrice, setCounterPrice] = useState('')
-  const [counterNotes, setCounterNotes] = useState('')
-  const [counterParty, setCounterParty] = useState('seller')
 
   const { data: offer, isLoading } = useOffer(id)
   const updateOffer = useUpdateOffer()
   const deleteOffer = useDeleteOffer()
   const createCounter = useCreateCounterOffer()
 
-  if (isLoading) return <div className="p-8 text-slate-400">Φόρτωση…</div>
-  if (!offer) return <div className="p-8 text-slate-400">Δεν βρέθηκε η προσφορά.</div>
+  if (isLoading) return <><Topbar title="Προσφορά" /><DetailPageSkeleton /></>
+  if (!offer) return <div className="p-8 text-slate-400 dark:text-slate-500">Δεν βρέθηκε η προσφορά.</div>
 
   const financing = FINANCING_OPTIONS.find(f => f.value === offer.financing)?.label ?? offer.financing
   const counterOffers = [...(offer.counter_offers ?? [])].sort((a: any, b: any) => a.round - b.round)
@@ -75,21 +67,18 @@ export function OfferDetail() {
     navigate('/offers')
   }
 
-  async function handleCounterSubmit() {
-    if (!counterPrice) return
+  async function handleCounterSubmit(values: { counter_price: number; from_party: 'seller' | 'buyer'; notes?: string }) {
     await createCounter.mutateAsync({
       offer_id: offer.id,
       round: nextRound,
-      counter_price: Number(counterPrice),
+      counter_price: values.counter_price,
       counter_date: new Date().toISOString().slice(0, 10),
       expires_at: null,
-      notes: counterNotes || null,
-      from_party: counterParty,
+      notes: values.notes || null,
+      from_party: values.from_party,
     })
     addToast('Αντιπροσφορά καταχωρήθηκε', 'success')
     setCounterOpen(false)
-    setCounterPrice('')
-    setCounterNotes('')
   }
 
   return (
@@ -104,16 +93,16 @@ export function OfferDetail() {
 
       <div className="p-4 lg:p-6 space-y-6">
         {/* Header card */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-2xl font-bold text-slate-900">{fmtMoney(offer.offer_price)}</h2>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{fmtMoney(offer.offer_price)}</h2>
                 <Badge label={OFFER_STATUS_LABELS[offer.status] ?? offer.status} variant={offer.status} />
               </div>
-              <p className="text-slate-500">{offer.property?.address}{offer.property?.city ? `, ${offer.property.city}` : ''}</p>
+              <p className="text-slate-500 dark:text-slate-400">{offer.property?.address}{offer.property?.city ? `, ${offer.property.city}` : ''}</p>
               {offer.property?.list_price && (
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
                   Ζητούμενη: {fmtMoney(offer.property.list_price)} —
                   Διαφορά: {((offer.offer_price - offer.property.list_price) / offer.property.list_price * 100).toFixed(1)}%
                 </p>
@@ -122,7 +111,7 @@ export function OfferDetail() {
           </div>
 
           {/* Visual status stepper */}
-          <div className="mt-5 pt-4 border-t border-slate-100">
+          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
             {/* Main flow */}
             <div className="flex items-center gap-1 flex-wrap">
               {(['pending', 'countered', 'accepted', 'signed'] as const).map((s, i, arr) => {
@@ -168,8 +157,8 @@ export function OfferDetail() {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Details */}
           <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-              <h3 className="font-semibold text-slate-900 mb-3">Οικονομικά Στοιχεία</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Οικονομικά Στοιχεία</h3>
               <InfoRow label="Τιμή Προσφοράς" value={fmtMoney(offer.offer_price)} />
               {offer.vat_rate != null && offer.vat_rate > 0 && (
                 <>
@@ -188,15 +177,15 @@ export function OfferDetail() {
               <InfoRow label="Due Diligence" value={offer.due_diligence_days ? `${offer.due_diligence_days} ημέρες` : null} />
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-              <h3 className="font-semibold text-slate-900 mb-3">Ημερομηνίες</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Ημερομηνίες</h3>
               <InfoRow label="Ημ. Προσφοράς" value={fmtDate(offer.offer_date)} />
               <InfoRow label="Λήξη" value={fmtDate(offer.expires_at)} />
               <InfoRow label="Ημ. Υπογραφής" value={fmtDate(offer.signing_date)} />
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-              <h3 className="font-semibold text-slate-900 mb-3">Εμπλεκόμενα Μέρη</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Εμπλεκόμενα Μέρη</h3>
               {(offer as any).category && <InfoRow label="Κατηγορία" value={OFFER_CATEGORY_LABELS[(offer as any).category] ?? (offer as any).category} />}
               <InfoRow label="Αγοραστής" value={offer.buyer?.full_name} />
               {offer.buyer?.phone && <InfoRow label="Τηλ. Αγοραστή" value={offer.buyer.phone} />}
@@ -214,7 +203,7 @@ export function OfferDetail() {
             </div>
 
             {(offer.special_terms || offer.internal_notes) && (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
                 {offer.special_terms && (
                   <div className="mb-3">
                     <h4 className="text-xs font-semibold text-slate-500 uppercase mb-1">Ειδικοί Όροι</h4>
@@ -234,32 +223,32 @@ export function OfferDetail() {
           {/* Right column */}
           <div className="lg:col-span-2 space-y-4">
             {/* Counter offers */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                <h3 className="font-semibold text-slate-900">Ιστορικό Αντιπροσφορών ({counterOffers.length})</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+                <h3 className="font-semibold text-slate-900 dark:text-white">Ιστορικό Αντιπροσφορών ({counterOffers.length})</h3>
                 <Button variant="secondary" size="sm" onClick={() => setCounterOpen(true)}>
                   <Plus size={14} /> Νέα Αντιπροσφορά
                 </Button>
               </div>
               {counterOffers.length === 0
-                ? <p className="text-sm text-slate-400 p-5">Δεν υπάρχουν αντιπροσφορές.</p>
+                ? <p className="text-sm text-slate-400 dark:text-slate-500 p-5">Δεν υπάρχουν αντιπροσφορές.</p>
                 : <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead><tr className="border-b border-slate-100 bg-slate-50">
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Γύρος</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Τιμή</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Από</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ημερομηνία</th>
-                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Σημειώσεις</th>
+                      <thead><tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Γύρος</th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Τιμή</th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Από</th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Ημερομηνία</th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Σημειώσεις</th>
                       </tr></thead>
                       <tbody>
                         {counterOffers.map((c: any) => (
-                          <tr key={c.id} className="border-b border-slate-50">
-                            <td className="px-5 py-3 font-medium text-slate-500">#{c.round}</td>
-                            <td className="px-5 py-3 font-bold text-slate-900">{fmtMoney(c.counter_price)}</td>
-                            <td className="px-5 py-3 text-slate-600">{c.from_party === 'seller' ? 'Πωλητής' : c.from_party === 'buyer' ? 'Αγοραστής' : c.from_party ?? '—'}</td>
-                            <td className="px-5 py-3 text-slate-400">{fmtDate(c.counter_date)}</td>
-                            <td className="px-5 py-3 text-slate-500 text-xs">{c.notes ?? '—'}</td>
+                          <tr key={c.id} className="border-b border-slate-50 dark:border-slate-700/50">
+                            <td className="px-5 py-3 font-medium text-slate-500 dark:text-slate-400">#{c.round}</td>
+                            <td className="px-5 py-3 font-bold text-slate-900 dark:text-white">{fmtMoney(c.counter_price)}</td>
+                            <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{c.from_party === 'seller' ? 'Πωλητής' : c.from_party === 'buyer' ? 'Αγοραστής' : c.from_party ?? '—'}</td>
+                            <td className="px-5 py-3 text-slate-400 dark:text-slate-500">{fmtDate(c.counter_date)}</td>
+                            <td className="px-5 py-3 text-slate-500 dark:text-slate-400 text-xs">{c.notes ?? '—'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -270,7 +259,7 @@ export function OfferDetail() {
 
             {id && <NotesList entityType="offer" entityId={id} />}
 
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
               <h3 className="font-semibold text-slate-900 mb-4">Αρχεία & Έγγραφα</h3>
               {id && <FileUpload entityType="offer" entityId={id} />}
             </div>
@@ -293,33 +282,13 @@ export function OfferDetail() {
 
       {/* Counter offer modal */}
       <Modal open={counterOpen} onClose={() => setCounterOpen(false)} title={`Αντιπροσφορά — Γύρος ${nextRound}`} size="sm">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Τιμή Αντιπροσφοράς (€) *</label>
-            <input type="number" value={counterPrice} onChange={e => setCounterPrice(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="290000" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Από</label>
-            <select value={counterParty} onChange={e => setCounterParty(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="seller">Πωλητής</option>
-              <option value="buyer">Αγοραστής</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Σημειώσεις</label>
-            <textarea value={counterNotes} onChange={e => setCounterNotes(e.target.value)} rows={3}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setCounterOpen(false)}>Ακύρωση</Button>
-            <Button variant="primary" disabled={!counterPrice || createCounter.isPending} onClick={handleCounterSubmit}>
-              {createCounter.isPending ? 'Αποθήκευση…' : 'Αποθήκευση'}
-            </Button>
-          </div>
-        </div>
+        <CounterOfferForm
+          round={nextRound}
+          originalPrice={offer.offer_price}
+          onSubmit={handleCounterSubmit}
+          onCancel={() => setCounterOpen(false)}
+          loading={createCounter.isPending}
+        />
       </Modal>
     </div>
   )

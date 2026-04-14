@@ -29,15 +29,15 @@ export function Modal({ open, onClose, title, children, size = 'md', dirty }: Mo
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
-      <div className={`relative bg-white w-full ${SIZES[size]} flex flex-col
+      <div className={`relative bg-white dark:bg-slate-800 w-full ${SIZES[size]} flex flex-col
         rounded-t-2xl sm:rounded-xl shadow-2xl
         max-h-[92dvh] sm:max-h-[90vh]`}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
             {dirty && <span className="w-2 h-2 rounded-full bg-amber-400" title="Αναποθήκευτες αλλαγές" />}
           </div>
-          <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500">
+          <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400">
             <X size={20} />
           </button>
         </div>

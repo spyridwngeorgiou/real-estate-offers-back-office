@@ -14,7 +14,7 @@ interface ConfirmDialogProps {
 export function ConfirmDialog({ open, title, message, onConfirm, onCancel, confirmLabel = 'Διαγραφή', danger = true }: ConfirmDialogProps) {
   return (
     <Modal open={open} onClose={onCancel} title={title} size="sm">
-      <p className="text-slate-600 mb-6">{message}</p>
+      <p className="text-slate-600 dark:text-slate-300 mb-6">{message}</p>
       <div className="flex justify-end gap-3">
         <Button variant="secondary" onClick={onCancel}>Ακύρωση</Button>
         <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm}>{confirmLabel}</Button>

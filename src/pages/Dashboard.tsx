@@ -61,9 +61,9 @@ export function Dashboard() {
 
         {/* First-time empty state: guide the user */}
         {isEmpty && (
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-blue-900 mb-1">Καλώς ήρθατε!</h2>
-            <p className="text-sm text-blue-700 mb-5">Ξεκινήστε προσθέτοντας το πρώτο σας ακίνητο και μετά καταχωρήστε τις προσφορές που λαμβάνετε.</p>
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-1">Καλώς ήρθατε!</h2>
+            <p className="text-sm text-blue-700 dark:text-blue-300 mb-5">Ξεκινήστε προσθέτοντας το πρώτο σας ακίνητο και μετά καταχωρήστε τις προσφορές που λαμβάνετε.</p>
             <div className="grid sm:grid-cols-3 gap-3">
               {[
                 { icon: Building2, label: 'Προσθέστε ακίνητο', sub: 'Καταχωρήστε διεύθυνση, τιμή και τύπο', to: '/properties', color: 'bg-blue-600' },
@@ -71,13 +71,13 @@ export function Dashboard() {
                 { icon: FileText, label: 'Καταχωρήστε προσφορά', sub: 'Συνδέστε ακίνητο με τιμή προσφοράς', to: '/offers', color: 'bg-emerald-600' },
               ].map(({ icon: Icon, label, sub, to, color }) => (
                 <button key={to} onClick={() => navigate(to)}
-                  className="flex items-center gap-3 bg-white rounded-lg p-4 border border-blue-100 hover:border-blue-300 hover:shadow-sm transition-all text-left group">
+                  className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-lg p-4 border border-blue-100 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all text-left group">
                   <div className={`${color} w-10 h-10 rounded-lg flex items-center justify-center shrink-0`}>
                     <Icon size={18} className="text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-800 text-sm group-hover:text-blue-700">{label}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm group-hover:text-blue-700 dark:group-hover:text-blue-400">{label}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{sub}</p>
                   </div>
                 </button>
               ))}
@@ -132,9 +132,9 @@ export function Dashboard() {
         {/* Recent offers + Activity */}
         {!isEmpty && (
           <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                <h2 className="font-semibold text-slate-900">Πρόσφατες Προσφορές</h2>
+            <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+                <h2 className="font-semibold text-slate-900 dark:text-white">Πρόσφατες Προσφορές</h2>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/offers')}>Όλες →</Button>
               </div>
               {recentOffers.length === 0
@@ -148,23 +148,23 @@ export function Dashboard() {
                 : <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-slate-100 bg-slate-50">
-                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ακίνητο</th>
-                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Τιμή</th>
-                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Κατάσταση</th>
-                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ημερομηνία</th>
+                        <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Ακίνητο</th>
+                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Τιμή</th>
+                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Κατάσταση</th>
+                          <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Ημερομηνία</th>
                         </tr>
                       </thead>
                       <tbody>
                         {recentOffers.map(o => (
                           <tr key={o.id} onClick={() => navigate(`/offers/${o.id}`)}
-                            className="border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors">
-                            <td className="px-5 py-3 font-medium text-slate-700">{o.property?.address ?? '—'}</td>
-                            <td className="px-5 py-3 font-bold text-slate-900">{fmtMoney(o.offer_price)}</td>
+                            className="border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors">
+                            <td className="px-5 py-3 font-medium text-slate-700 dark:text-slate-300">{o.property?.address ?? '—'}</td>
+                            <td className="px-5 py-3 font-bold text-slate-900 dark:text-white">{fmtMoney(o.offer_price)}</td>
                             <td className="px-5 py-3">
                               <Badge label={OFFER_STATUS_LABELS[o.status] ?? o.status} variant={o.status} />
                             </td>
-                            <td className="px-5 py-3 text-slate-400">{fmtDate(o.offer_date)}</td>
+                            <td className="px-5 py-3 text-slate-400 dark:text-slate-500">{fmtDate(o.offer_date)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -173,19 +173,19 @@ export function Dashboard() {
               }
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-              <div className="px-5 py-4 border-b border-slate-100">
-                <h2 className="font-semibold text-slate-900">Πρόσφατη Δραστηριότητα</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+                <h2 className="font-semibold text-slate-900 dark:text-white">Πρόσφατη Δραστηριότητα</h2>
               </div>
-              <div className="divide-y divide-slate-50">
+              <div className="divide-y divide-slate-50 dark:divide-slate-700/50">
                 {activities.length === 0
-                  ? <p className="text-slate-400 text-sm p-5">Καμία δραστηριότητα ακόμα.</p>
+                  ? <p className="text-slate-400 dark:text-slate-500 text-sm p-5">Καμία δραστηριότητα ακόμα.</p>
                   : activities.map(a => (
                       <div key={a.id} className="flex gap-3 px-5 py-3">
                         <span className="text-base shrink-0 mt-0.5">{activityIcon(a.event_type)}</span>
                         <div>
-                          <p className="text-sm text-slate-700">{a.description}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">{timeAgo(a.created_at)}</p>
+                          <p className="text-sm text-slate-700 dark:text-slate-300">{a.description}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{timeAgo(a.created_at)}</p>
                         </div>
                       </div>
                     ))
@@ -197,18 +197,18 @@ export function Dashboard() {
 
         {/* Status summary */}
         {offers.length > 0 && (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <h2 className="font-semibold text-slate-900 mb-4">Σύνοψη Προσφορών</h2>
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
+            <h2 className="font-semibold text-slate-900 dark:text-white mb-4">Σύνοψη Προσφορών</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {['pending', 'countered', 'accepted', 'rejected', 'withdrawn', 'signed'].map(status => {
                 const statusOffers = offers.filter(o => o.status === status)
                 const total = statusOffers.reduce((sum: number, o: any) => sum + (o.offer_price || 0), 0)
                 return (
                   <button key={status} onClick={() => navigate('/offers')}
-                    className="text-center p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                    className="text-center p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                     <Badge label={OFFER_STATUS_LABELS[status]} variant={status as any} />
-                    <p className="text-xl font-bold text-slate-900 mt-2">{statusOffers.length}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{fmtMoney(total || null)}</p>
+                    <p className="text-xl font-bold text-slate-900 dark:text-white mt-2">{statusOffers.length}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{fmtMoney(total || null)}</p>
                   </button>
                 )
               })}

@@ -12,9 +12,9 @@ interface ButtonProps {
 
 const VARIANTS = {
   primary:   'bg-blue-600 hover:bg-blue-700 text-white',
-  secondary: 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300',
+  secondary: 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 dark:border-slate-600',
   danger:    'bg-red-600 hover:bg-red-700 text-white',
-  ghost:     'hover:bg-slate-100 text-slate-600',
+  ghost:     'hover:bg-slate-100 text-slate-600 dark:hover:bg-slate-700 dark:text-slate-300',
 }
 
 const SIZES = {
