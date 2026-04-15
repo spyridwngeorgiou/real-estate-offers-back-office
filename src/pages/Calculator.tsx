@@ -210,7 +210,7 @@ export function Calculator() {
                 <tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Τιμή</th>
                   <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Φόρος 3%</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Νοταρ. 1.2%</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Συμβολαιογρ. 1.2%</th>
                   <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Μεσίτης 2%</th>
                   <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Σύνολο Εξόδων</th>
                 </tr>
