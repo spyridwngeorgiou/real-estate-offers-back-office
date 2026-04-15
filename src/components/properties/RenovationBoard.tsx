@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Wrench, CheckCircle2, Clock } from 'lucide-react'
 import { Badge } from '../ui/Badge'
+import { QuickMessageButton } from '../shared/MessageModal'
 import { OFFER_CATEGORY_LABELS, OFFER_STATUS_LABELS, fmtMoney } from '../../lib/utils'
 
 const WORK_CATEGORIES = new Set([
@@ -146,6 +147,9 @@ export function RenovationBoard({ offers }: RenovationBoardProps) {
                       {o.scope && (
                         <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 truncate">{o.scope}</p>
                       )}
+                      <div className="mt-2 flex justify-end" onClick={e => e.stopPropagation()}>
+                        <QuickMessageButton offer={o} />
+                      </div>
                     </button>
                   )
                 })}

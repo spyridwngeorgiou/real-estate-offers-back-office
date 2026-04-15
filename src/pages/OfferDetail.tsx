@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Edit, Trash2, Plus, Check, X as XIcon, Mail, Printer } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, Plus, Check, X as XIcon, Mail, Printer, MessageCircle } from 'lucide-react'
 import { Topbar } from '../components/layout/Topbar'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -17,6 +17,7 @@ import { CounterOfferForm } from '../components/offers/CounterOfferForm'
 import { CommissionList } from '../components/offers/CommissionList'
 import { OfferPrintView } from '../components/offers/OfferPrintView'
 import { EmailSendModal } from '../components/shared/EmailSendModal'
+import { MessageModal } from '../components/shared/MessageModal'
 import { offerVars } from '../lib/templateUtils'
 import { useUIStore } from '../store/uiStore'
 import { fmtMoney, fmtDate, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, FINANCING_OPTIONS } from '../lib/utils'
@@ -48,6 +49,7 @@ export function OfferDetail() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [counterOpen, setCounterOpen] = useState(false)
   const [emailOpen, setEmailOpen] = useState(false)
+  const [messageOpen, setMessageOpen] = useState(false)
 
   const { data: offer, isLoading } = useOffer(id)
   const updateOffer = useUpdateOffer()
@@ -60,7 +62,6 @@ export function OfferDetail() {
   const financing = FINANCING_OPTIONS.find(f => f.value === offer.financing)?.label ?? offer.financing
   const counterOffers = [...(offer.counter_offers ?? [])].sort((a: any, b: any) => a.round - b.round)
   const nextRound = counterOffers.length + 1
-  const availableTransitions = STATUS_TRANSITIONS[offer.status] ?? []
 
   async function handleStatusChange(status: string) {
     await updateOffer.mutateAsync({ id: offer.id, values: { status: status as any } })
@@ -92,6 +93,7 @@ export function OfferDetail() {
       <Topbar title={`Προσφορά ${fmtMoney(offer.offer_price)}`} actions={
         <div className="flex gap-2 flex-wrap">
           <Button variant="secondary" size="sm" onClick={() => navigate('/offers')}><ArrowLeft size={15} /></Button>
+          <Button variant="secondary" size="sm" onClick={() => setMessageOpen(true)}><MessageCircle size={15} /> WhatsApp</Button>
           <Button variant="secondary" size="sm" onClick={() => setEmailOpen(true)}><Mail size={15} /> Email</Button>
           <Button variant="secondary" size="sm" onClick={() => window.print()}><Printer size={15} /> PDF</Button>
           <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}><Edit size={15} /> Επεξεργασία</Button>
@@ -310,6 +312,8 @@ export function OfferDetail() {
           loading={createCounter.isPending}
         />
       </Modal>
+
+      <MessageModal open={messageOpen} onClose={() => setMessageOpen(false)} offer={offer} />
 
       {/* Print-only view — hidden on screen, shown by @media print */}
       <OfferPrintView offer={offer} />
