@@ -66,6 +66,7 @@ export interface Offer {
   due_diligence_days: number | null
   vat_rate: number | null
   vat_included: boolean
+  scope: string | null
   special_terms: string | null
   internal_notes: string | null
   created_at: string

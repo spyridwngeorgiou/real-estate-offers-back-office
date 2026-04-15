@@ -195,6 +195,7 @@ export function OfferDetail() {
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
               <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Εμπλεκόμενα Μέρη</h3>
               {(offer as any).category && <InfoRow label="Κατηγορία" value={OFFER_CATEGORY_LABELS[(offer as any).category] ?? (offer as any).category} />}
+              {(offer as any).scope && <InfoRow label="Εύρος Εργασιών" value={(offer as any).scope} />}
               <InfoRow label="Αγοραστής" value={offer.buyer?.full_name} />
               {offer.buyer?.phone && <InfoRow label="Τηλ. Αγοραστή" value={offer.buyer.phone} />}
               {offer.buyer?.email && <InfoRow label="Email Αγοραστή" value={offer.buyer.email} />}

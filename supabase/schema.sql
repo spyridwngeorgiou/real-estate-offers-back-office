@@ -101,6 +101,7 @@ CREATE TABLE IF NOT EXISTS offers (
   expires_at          date,
   signing_date        date,
   due_diligence_days  smallint,
+  scope               text,
   special_terms       text,
   internal_notes      text,
   created_at          timestamptz NOT NULL DEFAULT now(),
@@ -236,6 +237,7 @@ CREATE TABLE IF NOT EXISTS email_templates (
 
 -- Migration (run if table already exists):
 -- ALTER TABLE email_templates ADD COLUMN IF NOT EXISTS category text;
+-- ALTER TABLE offers ADD COLUMN IF NOT EXISTS scope text;
 
 CREATE INDEX IF NOT EXISTS idx_email_templates_name ON email_templates(name);
 

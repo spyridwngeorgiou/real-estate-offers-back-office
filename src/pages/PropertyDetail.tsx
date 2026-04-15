@@ -14,11 +14,12 @@ import { OfferCompare } from '../components/offers/OfferCompare'
 import { NotesList } from '../components/shared/NotesList'
 import { TaskList } from '../components/shared/TaskList'
 import { ViewingLog } from '../components/properties/ViewingLog'
+import { RenovationBoard } from '../components/properties/RenovationBoard'
 import { InfoRow } from '../components/shared/InfoRow'
 import { useProperty, useUpdateProperty, useDeleteProperty } from '../hooks/useProperties'
 import { useOffers, useCreateOffer, useUpdateOffer } from '../hooks/useOffers'
 import { useUIStore } from '../store/uiStore'
-import { fmtMoney, fmtDate, pricePerSqm, PROPERTY_TYPE_LABELS, PROPERTY_STATUS_LABELS, OFFER_STATUS_LABELS, FLOOR_OPTIONS } from '../lib/utils'
+import { fmtMoney, fmtDate, pricePerSqm, PROPERTY_TYPE_LABELS, PROPERTY_STATUS_LABELS, OFFER_STATUS_LABELS, OFFER_CATEGORY_LABELS, FLOOR_OPTIONS } from '../lib/utils'
 
 
 export function PropertyDetail() {
@@ -120,6 +121,7 @@ export function PropertyDetail() {
                     <table className="w-full text-sm">
                       <thead><tr className="border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                         <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Επαφή</th>
+                        <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Κατηγορία</th>
                         <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Τιμή</th>
                         <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Κατάσταση</th>
                         <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Ημ/νία</th>
@@ -129,6 +131,10 @@ export function PropertyDetail() {
                         {offers.map((o: any) => (
                           <tr key={o.id} className="border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                             <td className="px-5 py-3 font-medium text-slate-900 dark:text-slate-100">{o.buyer?.full_name ?? o.contractor?.full_name ?? '—'}</td>
+                            <td className="px-5 py-3 text-slate-500 dark:text-slate-400 text-xs">
+                              {o.category ? (OFFER_CATEGORY_LABELS[o.category] ?? o.category) : '—'}
+                              {o.scope && <span className="ml-1 text-slate-400 dark:text-slate-500">· {o.scope}</span>}
+                            </td>
                             <td className="px-5 py-3 font-bold text-slate-900 dark:text-white">{fmtMoney(o.offer_price)}</td>
                             <td className="px-5 py-3"><Badge label={OFFER_STATUS_LABELS[o.status] ?? o.status} variant={o.status} /></td>
                             <td className="px-5 py-3 text-slate-400 dark:text-slate-500">{fmtDate(o.offer_date)}</td>
@@ -143,6 +149,7 @@ export function PropertyDetail() {
               }
             </div>
 
+            <RenovationBoard offers={offers} />
             {id && <ViewingLog propertyId={id} />}
             {id && <NotesList entityType="property" entityId={id} />}
             {id && <TaskList entityType="property" entityId={id} />}

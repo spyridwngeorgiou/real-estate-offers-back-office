@@ -58,10 +58,16 @@ export const OFFER_CATEGORY_LABELS: Record<string, string> = {
   purchase: 'Αγορά Ακινήτου',
   // Ενοικίαση
   rental: 'Ενοικίαση Ακινήτου',
+  // Νέα Κατασκευή
+  new_construction: 'Νέα Κατασκευή',
+  construction_full: 'Ολοκληρωμένη Κατασκευή',
+  demolition: 'Κατεδάφιση',
+  masonry: 'Κτίσιμο / Τοιχοποιία',
+  concrete: 'Σκυρόδεμα / Σκελετός',
   // Ανακαίνιση — γενικά
   renovation_full: 'Ολική Ανακαίνιση',
   renovation_partial: 'Μερική Ανακαίνιση',
-  // Ανακαίνιση — ειδικότητες
+  // Τεχνικές Εργασίες — ειδικότητες
   electrical: 'Ηλεκτρολογικά',
   plumbing: 'Υδραυλικά',
   hvac: 'Κλιματισμός / HVAC',
@@ -72,6 +78,8 @@ export const OFFER_CATEGORY_LABELS: Record<string, string> = {
   windows: 'Κουφώματα / Παράθυρα',
   roofing: 'Στέγη / Στέγαση',
   finishing: 'Φινίρισμα / Αποπεράτωση',
+  landscaping: 'Διαμόρφωση Χώρου',
+  elevator: 'Ανελκυστήρας',
   // Λοιπά
   equipment: 'Εξοπλισμός',
   legal: 'Νομικές / Συμβολαιογραφικές',

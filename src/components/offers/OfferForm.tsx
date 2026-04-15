@@ -21,9 +21,16 @@ interface OfferFormProps {
   onDirtyChange?: (dirty: boolean) => void
 }
 
-const WORK_CATEGORIES = ['electrical', 'plumbing', 'hvac', 'structural', 'insulation',
-  'flooring', 'painting', 'windows', 'roofing', 'finishing', 'equipment',
-  'renovation_full', 'renovation_partial']
+const WORK_CATEGORIES = [
+  // Construction
+  'new_construction', 'construction_full', 'demolition', 'masonry', 'concrete',
+  // Renovation
+  'renovation_full', 'renovation_partial',
+  // Trades
+  'electrical', 'plumbing', 'hvac', 'structural', 'insulation',
+  'flooring', 'painting', 'windows', 'roofing', 'finishing',
+  'landscaping', 'elevator', 'equipment',
+]
 
 function contactFieldLabel(category: string) {
   if (category === 'purchase') return 'Αγοραστής'
@@ -51,6 +58,7 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
       offer_date: initial?.offer_date ?? new Date().toISOString().slice(0, 10),
       status: initial?.status ?? 'pending',
       category: (initial as any)?.category ?? '',
+      scope: (initial as any)?.scope ?? '',
       contact_person_id: (initial as any)?.buyer_id ?? (initial as any)?.contractor_id ?? '',
       vat_rate: initial?.vat_rate ?? null,
       vat_included: initial?.vat_included ?? false,
@@ -225,6 +233,20 @@ export function OfferForm({ initial, prePropertyId, onSubmit, onCancel, loading,
             )}
           </div>
         </div>
+
+        {/* Scope field — shown for work/renovation categories */}
+        {isWork && (
+          <div className="sm:col-span-2">
+            <FormField label="Εύρος Εργασιών" hint="π.χ. Όλοι οι όροφοι, Όροφος 1-2, Διαμέρισμα Α">
+              <input
+                {...register('scope')}
+                type="text"
+                className={inputClass}
+                placeholder="π.χ. Όλοι οι όροφοι"
+              />
+            </FormField>
+          </div>
+        )}
 
         <div className="sm:col-span-2">
           <FormField label={contactFieldLabel(category)}>

@@ -95,6 +95,7 @@ export function OfferPrintView({ offer }: OfferPrintViewProps) {
         <Section title="Οικονομικά Στοιχεία">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
+              {offer.scope && <Row label="Εύρος Εργασιών" value={offer.scope} />}
               <Row label="Τιμή Προσφοράς" value={fmtMoney(offer.offer_price)} />
               {offer.vat_rate != null && offer.vat_rate > 0 && <>
                 <Row label="ΦΠΑ" value={`${offer.vat_rate}% ${offer.vat_included ? '(περιλαμβάνεται)' : ''}`} />
